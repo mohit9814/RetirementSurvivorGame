@@ -1,0 +1,103 @@
+# Task List: Retirement Bucket Survivor
+
+- [ ] **Project Setup**
+  - [ ] Initialize Vite Project (React + TS) <!-- id: 0 -->
+  - [ ] Setup Basic CSS Architecture (Variables, Reset, Typography) <!-- id: 1 -->
+  - [ ] Create Directory Structure (components, engine, hooks, types) <!-- id: 2 -->
+
+- [ ] **Core Engine "The Simulator"**
+  - [ ] Implement `MarketEngine` (Data generation, Volatility logic) <!-- id: 3 -->
+  - [ ] Implement `GameLoop` (State management for Years, Balances, Events) <!-- id: 4 -->
+  - [ ] Add `BucketLogic` (Refill rules, auto-deduction of expenses) <!-- id: 5 -->
+
+- [ ] **UI Implementation "The Cockpit"**
+  - [ ] **Onboarding/Setup Screen** <!-- id: 6 -->
+    - [ ] Inputs for Corpus, Expenses, Asset Allocation.
+  - [ ] **Main Game Dashboard** <!-- id: 7 -->
+    - [ ] Bucket Visualizations (Water tanks or Vaults).
+    - [ ] Market Status Indicator (Boom/Bust animations).
+    - [ ] Action Panel (Refill buttons, Next Year button).
+  - [ ] **Analysis/Charts** <!-- id: 8 -->
+    - [ ] Wealth Timeline Chart.
+    - [ ] Event Log.
+    - [x] Verify Engine logic with script
+- [x] Debug Blank Page Issue
+    - [x] Inspect App.tsx
+    - [x] Fix Syntax Error in App.tsx
+    - [x] Run Build Integrity Check (Failed: 28 errors)
+- [x] Fix Build Errors
+    - [x] Revert to relative imports
+    - [x] Run `npm run build` to verify
+
+- [x] UI/UX Improvements
+    - [x] Create Currency Utility
+    - [x] Create CurrencyInput Component
+    - [x] Update SetupForm with CurrencyInput
+    - [x] Create Config Modal
+    - [x] Redesign ControlPanel (Transfer Flow)
+    - [x] Update BucketCard
+
+- [x] Gamification & Visualization
+    - [x] Install `recharts` & `framer-motion`
+    - [x] Update Game Logic (Survival Years)
+    - [x] Update SetupForm (Survival Input)
+    - [x] Create BurnDownChart Component
+    - [x] Add Expense Animation to App/BucketCard
+    - [x] Create Milestone Animations
+- [x] Layout Optimization ("No Scroll")
+    - [x] Update main.css (Grid & Compact Utilities)
+    - [x] Refactor App.tsx to Grid Layout
+    - [x] Compact BucketCard
+    - [x] Compact BurnDownChart
+- [x] Visual Polish & Refinement
+    - [x] Update main.css (Background, Gradients, Typography)
+    - [x] Polish BucketCard (Liquid effect, Typography)
+    - [x] Polish ControlPanel (Hero Button)
+    - [x] Polish App Header & Chart
+- [x] Data Visualization Enhancements
+    - [x] Add portfolioReturn to YearlyResult
+    - [x] Update GameEngine to calculate portfolio return
+    - [x] Update Log with Red/Green indicators
+    - [x] Update Graph with colored dots and tooltip
+- [x] Leaderboard & User Tracking
+    - [x] Create utils/storage.ts (saveResult, getLeaderboard)
+    - [x] Create WelcomeScreen component
+    - [x] Create Leaderboard component
+    - [x] Update App.tsx to handle new flow
+    - [x] Integrate Game Over saving logic
+- [x] Game Constraints
+    - [x] Implement Bucket 1 Safety Check (Prevent Advance if < 1 year expenses)
+- [x] Taxation Simulation
+    - [x] Create tax utility (New Regime, LTCG)
+    - [x] Update GameEngine to calculate and deduct tax
+    - [x] Update ConfigModal to toggle tax
+    - [x] Update Log to show tax paid
+- [x] Auto-Rebalancing & Play Mode
+    - [x] Define Rebalancing Strategies (types/index.ts)
+    - [x] Create engine/RebalancingEngine.ts (Refill, Fixed Ratio, Glide)
+    - [x] Update GameEngine to integrate rebalancing step
+    - [x] Update useGame hook for Auto-Play logic (setInterval)
+- [x] Data Analysis & Customization
+    - [x] Upgrade Log to Detailed Table (App.tsx)
+    - [x] Add columns: Bucket Returns (%), Tax Paid, Annual Drawdown
+    - [x] Implement "Custom" Rebalancing Strategy in RebalancingEngine
+    - [x] Update ConfigModal to support Custom Strategy parameters (Target Years)
+    - [x] Add Allocation % Editing in ConfigModal for "Mid-Game" Strategy updates
+    - [x] Increase Custom Buffer Max Limit to 20 Years
+
+- [x] Persistence & Settings
+    - [x] Create storage utility for config (save/load)
+    - [x] Update SetupForm to load previous settings
+    - [x] Update useGame to auto-save settings on change
+
+- [x] Victory & Infinite Play
+    - [x] Fix 30-Year Hardcoded Limit in GameEngine
+    - [x] Create specific Victory UI (Green vs Red)
+    - [x] Implement "Continue Journey" button (Extend Mission +10 Years)
+    - [x] Increase Max Mission Duration to 200 Years
+
+- [x] **Fund Database & Analytics**
+    - [x] Inspect CSV schema and map to SQL types
+    - [x] Create SQLite database and ingestion script
+    - [x] Implement query logic for User's specific criteria (Risk/Reward, Downside, etc.)
+    - [x] Run analysis and output "Best Funds"

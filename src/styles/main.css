@@ -1,0 +1,279 @@
+:root {
+  /* Colors - Premium/Deep Space Theme */
+  --color-bg-deep: #020617;
+  /* Very dark slate, almost black */
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+
+  /* Vibrant Accents (Gradients) */
+  --gradient-primary: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+  /* Cyan to Blue */
+  --gradient-success: linear-gradient(135deg, #4ade80 0%, #16a34a 100%);
+  /* Green to Emerald */
+  --gradient-warning: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  /* Amber to Orange */
+  --gradient-danger: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  /* Red to Crimson */
+  --gradient-glass: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+
+  --color-accent: #38bdf8;
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+
+  /* Refined Glassmorphism */
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  /* Slightly darker/blue tint */
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.15);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+
+  /* Radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  /* More rounded for modern feel */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  /* Prefer modern geometric sans */
+  background-color: var(--color-bg-deep);
+  /* Deep Atmospheric Background */
+  background-image:
+    radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow: hidden;
+  /* Prevent body scroll */
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Utilities */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle inner glow for panels */
+.glass-panel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-highlight), transparent);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.btn {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.8);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text-secondary);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.btn-danger {
+  background: var(--gradient-danger);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.btn-success {
+  background: var(--gradient-success);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+}
+
+/* Typography Enhancements */
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -0.02em;
+}
+
+/* Dashboard Layout */
+.dashboard-container {
+  display: grid;
+  grid-template-areas:
+    "header header header"
+    "buckets buckets buckets"
+    "chart chart controls";
+  grid-template-rows: auto 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-md);
+  height: 100vh;
+  padding: var(--space-md);
+  max-width: 100%;
+}
+
+.dashboard-header {
+  grid-area: header;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 50px;
+  /* Even tighter header */
+  background: transparent !important;
+  /* Make header transparent for airy feel */
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 var(--space-xs) !important;
+}
+
+.dashboard-buckets {
+  grid-area: buckets;
+  display: flex;
+  gap: var(--space-md);
+  height: 100%;
+  min-height: 0;
+}
+
+.dashboard-chart {
+  grid-area: chart;
+  height: 100%;
+  min-height: 0;
+}
+
+.dashboard-controls {
+  grid-area: controls;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .dashboard-container {
+    grid-template-areas:
+      "header"
+      "buckets"
+      "controls"
+      "chart";
+    grid-template-rows: auto auto auto 1fr;
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow-y: auto;
+  }
+
+  .dashboard-buckets {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+/* Compact Utilities */
+.compact-text {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.compact-h {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.hero-text {
+  font-size: 1.75rem;
+  font-weight: 700;
+  background: linear-gradient(to bottom, white, #cbd5e1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.number-mono {
+  font-family: 'Space Mono', monospace;
+  letter-spacing: -0.05em;
+}
+
+@keyframes float-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.8);
+  }
+
+  20% {
+    opacity: 1;
+    transform: translateY(-20px) scale(1.1);
+  }
+
+  80% {
+    opacity: 1;
+    transform: translateY(-40px) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.9);
+  }
+}
