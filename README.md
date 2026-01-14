@@ -1,73 +1,84 @@
-# React + TypeScript + Vite
+# 🎮 Retirement Survivor: The 50-Year Simulation
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> *"Compound interest is the eighth wonder of the world. He who understands it, earns it... he who doesn't, pays it." — Albert Einstein*
 
-Currently, two official plugins are available:
+## 🌟 Vision & Goal
+**Retirement Survivor** is not just a calculator—it's a **Survival Game**. 
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Most retirement calculators use simple linear averages (e.g., "Expect 10% returns forever"). This leads to disaster because it ignores **Sequence of Returns Risk**—the danger that the market crashes *just* when you retire.
 
-## React Compiler
+**The Goal**: Can your portfolio survive 50 years of inflation, market crashes (2000, 2008, 2020), and tax events without hitting ₹0? 
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛡️ The Strategy: 3-Bucket System
+Instead of keeping all money in one pot, we simulate a robust **Bucket Strategy** to weather storms:
 
-## Expanding the ESLint configuration
+1.  **Bucket 1 (Cash/Liquid)**: 
+    *   **Role**: Safety Net. 
+    *   **Asset**: Cash/FDs.
+    *   **Goal**: Holds 2-3 years of living expenses. Immune to market crashes.
+2.  **Bucket 2 (Income)**: 
+    *   **Role**: Stability & Yield. 
+    *   **Asset**: Debt/Bonds/Hybrid Funds.
+    *   **Goal**: Generates steady income to refill Bucket 1.
+3.  **Bucket 3 (Growth)**: 
+    *   **Role**: Wealth Engine. 
+    *   **Asset**: Equity Mutual Funds.
+    *   **Goal**: Beats inflation over decades. High volatility, high reward.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🧞‍♂️ The "Einstein" Rebalancing Engine
+The core of the simulation is the **Rebalancing Agent** (represented by the Genie/Einstein wizard). It automates complex financial decisions every year:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+*   **Safety Refill**: If Bucket 1 drops below 2 years of expenses, it intelligently sells from B2 or B3.
+*   **Profit Skimming**: If B3 (Equity) rallies hard (e.g., +50%), it sells the "cream" and moves it to safety (B1/B2).
+*   **Buy Low**: If the market crashes, it uses safe cash from B2 to buy cheap Equity in B3.
+*   **Glide Path**: (Optional) Slowly reduces Equity exposure as you age (De-risking).
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🚀 Key Features
+*   **Historical Simulation**: Runs against realistic market data (volatility, crashes).
+*   **Tactical De-Risking**: Watch your Equity allocation (Purple Chart) slowly glide down as you age.
+*   **Visual Analytics**:
+    *   **Burn Down Chart**: Will you run out of money?
+    *   **Allocation %**: Track your asset mix over 100+ years.
+    *   **Bucket Visuals**: See precise money flow, tax hits (💸), and growth.
+*   **Snail Mode**: Slow down time to 0.5x to watch every single transaction and market move.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🛠️ Tech Stack
+*   **Frontend**: React (Vite) + TypeScript
+*   **Charts**: Recharts (Custom composed charts for wealth & allocation)
+*   **Styles**: Pure CSS Modules + Glassmorphism Design System
+*   **Animation**: CSS Keyframes + Framer-like transitions
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🏁 Getting Started
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Prerequisites
+*   Node.js (v18+)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Installation
+1.  Clone the repo:
+    ```bash
+    git clone https://github.com/mohit9814/RetirementSurvivorGame.git
+    cd RetirementSurvivorGame
+    ```
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+
+### How to Play
+1.  Start the simulator:
+    ```bash
+    npm run dev
+    ```
+2.  Open your browser (usually `http://localhost:5173`).
+3.  **Configure Your Life**:
+    *   Set **Initial Corpus** (e.g., ₹5 Cr).
+    *   Set **Yearly Expenses** (e.g., ₹12 Lakhs).
+    *   Choose a **Strategy** (Tactical, Glide Path, etc.).
+4.  Hit **Start Game** ▶️.
+5.  Watch the years fly by!
+    *   Hover over buckets to see returns.
+    *   Switch charts to see your Glide Path.
+    *   Try to survive until year 50!
+
+---
+*Built with ❤️ for Financial Independence.*
