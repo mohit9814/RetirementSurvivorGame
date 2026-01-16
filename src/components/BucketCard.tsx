@@ -19,6 +19,7 @@ const BucketCard: React.FC<BucketCardProps> = ({
     bucket, history, totalWealth, index, currentYear, isTransferSource, isTransferTarget, onTransferInitiate, onTransferComplete
 }) => {
     const [transferAmount, setTransferAmount] = useState(0);
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
 
     const percentage = totalWealth > 0 ? (bucket.balance / totalWealth) * 100 : 0;
 
@@ -41,10 +42,15 @@ const BucketCard: React.FC<BucketCardProps> = ({
     };
 
     return (
-        <div className={`glass - panel`}
+        <div className={`glass-panel`}
             style={{
                 width: '100%',
-                padding: '1rem', flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '0.75rem',
+                padding: isMobile ? '0.5rem' : '1rem',
+                flex: 1,
+                minWidth: isMobile ? 'unset' : '300px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: isMobile ? '0.25rem' : '0.75rem',
                 border: isTransferSource ? '1px solid var(--color-accent)' : (isTransferTarget ? '1px solid var(--color-success)' : '1px solid var(--glass-border)'),
                 boxShadow: isTransferSource ? '0 0 15px rgba(56, 189, 248, 0.2)' : (isTransferTarget ? '0 0 15px rgba(34, 197, 94, 0.2)' : 'var(--glass-shadow)'),
                 transform: isTransferTarget ? 'scale(1.02)' : 'none',
@@ -54,27 +60,29 @@ const BucketCard: React.FC<BucketCardProps> = ({
             }}
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.25rem' : '0.5rem' }}>
                     <div style={{
-                        width: '8px', height: '8px', borderRadius: '50%',
+                        width: isMobile ? '6px' : '8px', height: isMobile ? '6px' : '8px', borderRadius: '50%',
                         background: getBucketColor(bucket.type),
-                        boxShadow: `0 0 8px ${getBucketColor(bucket.type)} `
+                        boxShadow: `0 0 8px ${getBucketColor(bucket.type)}`
                     }} />
-                    <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-                        {bucket.name}
+                    <h3 style={{ fontSize: isMobile ? '0.65rem' : '0.9rem', fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+                        {isMobile ? bucket.type : bucket.name}
                     </h3>
                 </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>
-                    {index === 0 ? 'LIQUID' : index === 1 ? 'INCOME' : 'GROWTH'}
-                </span>
+                {!isMobile && (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                        {index === 0 ? 'LIQUID' : index === 1 ? 'INCOME' : 'GROWTH'}
+                    </span>
+                )}
             </div>
 
             {/* Premium Visualization */}
-            <div style={{ position: 'relative', height: '100px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ position: 'relative', height: isMobile ? '40px' : '100px', background: 'rgba(0,0,0,0.3)', borderRadius: isMobile ? '6px' : '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
                 {/* Liquid Fill */}
                 <div style={{
                     position: 'absolute', bottom: 0, left: 0, right: 0,
-                    height: `${Math.max(percentage, 5)}% `,
+                    height: `${Math.max(percentage, 5)}%`,
                     background: getBucketGradient(bucket.type),
                     transition: 'height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     opacity: 0.9,
@@ -82,53 +90,54 @@ const BucketCard: React.FC<BucketCardProps> = ({
                 }} />
 
                 {/* Meniscus / Top highlight */}
-                <div style={{
-                    position: 'absolute', bottom: `${Math.max(percentage, 5)}% `, left: 0, right: 0,
-                    height: '2px', background: 'rgba(255,255,255,0.5)',
-                    boxShadow: '0 0 10px rgba(255,255,255,0.5)',
-                    transition: 'bottom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'
-                }} />
+                {!isMobile && (
+                    <div style={{
+                        position: 'absolute', bottom: `${Math.max(percentage, 5)}%`, left: 0, right: 0,
+                        height: '2px', background: 'rgba(255,255,255,0.5)',
+                        boxShadow: '0 0 10px rgba(255,255,255,0.5)',
+                        transition: 'bottom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                    }} />
+                )}
 
                 <div style={{
                     position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     textShadow: '0 2px 4px rgba(0,0,0,0.8)', zIndex: 2
                 }}>
-                    <span className="hero-text" style={{ fontSize: '2rem', lineHeight: 1 }}>{percentage.toFixed(0)}<span style={{ fontSize: '1rem', opacity: 0.7 }}>%</span></span>
+                    <span className="hero-text" style={{ fontSize: isMobile ? '1rem' : '2rem', lineHeight: 1 }}>{percentage.toFixed(0)}<span style={{ fontSize: isMobile ? '0.6rem' : '1rem', opacity: 0.7 }}>%</span></span>
                 </div>
             </div>
 
             <div style={{ textAlign: 'center' }}>
-                <div className="hero-text" style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{formatCurrency(bucket.balance)}</div>
+                <div className="hero-text" style={{ fontSize: isMobile ? '0.85rem' : '1.5rem', marginBottom: isMobile ? '0' : '0.25rem' }}>{formatCurrency(bucket.balance)}</div>
                 <div style={{
-                    fontSize: '0.85rem', fontWeight: 600,
+                    fontSize: isMobile ? '0.55rem' : '0.85rem', fontWeight: 600,
                     color: (bucket.lastYearReturn >= 0 ? 'var(--color-success)' : 'var(--color-danger)'),
                     background: (bucket.lastYearReturn >= 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(220, 38, 38, 0.1)'),
-                    display: 'inline-block', padding: '0.1rem 0.5rem', borderRadius: '4px'
+                    display: 'inline-block', padding: isMobile ? '0 0.25rem' : '0.1rem 0.5rem', borderRadius: '4px'
                 }}>
-                    {bucket.lastYearReturn > 0 ? '+' : ''}{(bucket.lastYearReturn * 100).toFixed(2)}% Return
+                    {bucket.lastYearReturn > 0 ? '+' : ''}{(bucket.lastYearReturn * 100).toFixed(isMobile ? 1 : 2)}%
                 </div>
 
-                {/* Floating Investment Gain/Loss Animation */}
-                {/* Floating Investment Gain/Loss Animation */}
-                {currentYear > 0 && (
+                {/* Floating Investment Gain/Loss Animation - Hidden on Mobile */}
+                {!isMobile && currentYear > 0 && (
                     <div
-                        key={currentYear} // Restart animation on year change
+                        key={currentYear}
                         style={{
                             position: 'absolute',
-                            top: `${10 + (currentYear % 3) * 5}%`, // Stagger: 10%, 15%, 20% based on year to reduce pattern fatigue
+                            top: `${10 + (currentYear % 3) * 5}%`,
                             right: '5%',
                             fontWeight: 'bold',
                             fontSize: '1.2rem',
                             color: bucket.lastYearReturn >= 0 ? '#4ade80' : '#ef4444',
-                            background: 'rgba(15, 23, 42, 0.9)', // Dark background for contrast
+                            background: 'rgba(15, 23, 42, 0.9)',
                             padding: '0.25rem 0.75rem',
                             borderRadius: '999px',
                             border: '1px solid rgba(255,255,255,0.1)',
-                            animation: 'float-fade 4s ease-out forwards', // Slower animation
+                            animation: 'float-fade 4s ease-out forwards',
                             pointerEvents: 'none',
                             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)',
                             zIndex: 20,
-                            opacity: Math.abs(bucket.lastYearReturn) < 0.000001 ? 0 : 1 // Hide if truly 0
+                            opacity: Math.abs(bucket.lastYearReturn) < 0.000001 ? 0 : 1
                         }}
                     >
                         {Math.abs(bucket.lastYearReturn) < 0.000001 ? (
@@ -142,8 +151,8 @@ const BucketCard: React.FC<BucketCardProps> = ({
                 )}
             </div>
 
-            {/* Historical Return Mini-Chart (Sparkline) */}
-            {chartData.length > 2 && (
+            {/* Historical Return Mini-Chart (Sparkline) - Hidden on Mobile */}
+            {!isMobile && chartData.length > 2 && (
                 <div style={{ flex: 1, minHeight: '60px', marginTop: '0.5rem', position: 'relative' }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData}>
@@ -151,14 +160,13 @@ const BucketCard: React.FC<BucketCardProps> = ({
                                 cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                                 contentStyle={{ background: '#1e293b', border: '1px solid #475569', color: '#f8fafc', fontSize: '0.75rem', borderRadius: '4px', padding: '4px 8px' }}
                                 itemStyle={{ color: '#f8fafc' }}
-                                formatter={(val: any) => [`${val.toFixed(2)}% `, 'Return']}
-                                labelFormatter={(label) => `Year ${label} `}
+                                formatter={(val: any) => [`${val.toFixed(2)}%`, 'Return']}
+                                labelFormatter={(label) => `Year ${label}`}
                             />
-                            {/* Dotted Average Line */}
                             <ReferenceLine y={avgReturn} stroke="rgba(255,255,255,0.3)" strokeDasharray="3 3" />
                             <Bar dataKey="return" radius={[2, 2, 0, 0]}>
-                                {chartData.map((entry, index) => (
-                                    <Cell key={`cell - ${index} `} fill={entry.return >= 0 ? 'rgba(34, 197, 94, 0.6)' : 'rgba(239, 68, 68, 0.6)'} />
+                                {chartData.map((entry, idx) => (
+                                    <Cell key={`cell-${idx}`} fill={entry.return >= 0 ? 'rgba(34, 197, 94, 0.6)' : 'rgba(239, 68, 68, 0.6)'} />
                                 ))}
                             </Bar>
                         </BarChart>
@@ -169,8 +177,8 @@ const BucketCard: React.FC<BucketCardProps> = ({
                 </div>
             )}
 
-            {/* Actions */}
-            <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
+            {/* Actions - Simplified on Mobile */}
+            <div style={{ marginTop: 'auto', paddingTop: isMobile ? '0.25rem' : '1rem', borderTop: isMobile ? 'none' : '1px dashed rgba(255,255,255,0.1)' }}>
                 {isTransferTarget ? (
                     <div onClick={e => e.stopPropagation()}>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Amount (Lakhs)</label>

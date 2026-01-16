@@ -208,7 +208,7 @@ h4 {
   gap: var(--space-md);
 }
 
-/* Responsive adjustments */
+/* Responsive adjustments - Tablet */
 @media (max-width: 1024px) {
   .dashboard-container {
     grid-template-areas:
@@ -225,6 +225,179 @@ h4 {
   .dashboard-buckets {
     flex-direction: row;
     flex-wrap: wrap;
+  }
+}
+
+/* Mobile-First Optimizations - Fit everything in viewport */
+@media (max-width: 768px) {
+  :root {
+    --space-xs: 0.15rem;
+    --space-sm: 0.3rem;
+    --space-md: 0.5rem;
+    --space-lg: 0.75rem;
+  }
+
+  body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #root {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .dashboard-container {
+    grid-template-areas:
+      "header"
+      "controls"
+      "buckets"
+      "chart";
+    grid-template-rows: auto auto auto 1fr;
+    grid-template-columns: 1fr;
+    height: 100vh;
+    overflow: hidden;
+    padding: var(--space-sm);
+    gap: var(--space-sm);
+  }
+
+  .dashboard-header {
+    height: 36px !important;
+    padding: 0 var(--space-xs) !important;
+  }
+
+  .dashboard-header h1 {
+    font-size: 0.9rem !important;
+  }
+
+  /* Compact Buckets - Horizontal row with mini cards */
+  .dashboard-buckets {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: var(--space-xs);
+    height: auto !important;
+    min-height: unset !important;
+    overflow-x: auto;
+    padding-bottom: var(--space-xs);
+  }
+
+  .dashboard-buckets>.glass-panel {
+    min-width: unset !important;
+    width: 32% !important;
+    flex: 0 0 32% !important;
+    padding: var(--space-sm) !important;
+    gap: var(--space-xs) !important;
+  }
+
+  /* Mobile Bucket Card Overrides */
+  .dashboard-buckets .hero-text {
+    font-size: 0.85rem !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Chart Section - Take remaining space */
+  .dashboard-chart {
+    min-height: 150px !important;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .dashboard-chart .glass-panel {
+    height: 100%;
+    padding: var(--space-sm) !important;
+  }
+
+  .dashboard-chart h3 {
+    font-size: 0.75rem !important;
+    margin-bottom: var(--space-xs) !important;
+  }
+
+  /* Controls Section - Compact */
+  .dashboard-controls {
+    height: auto !important;
+    min-height: unset !important;
+    gap: var(--space-xs) !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-controls>.glass-panel {
+    padding: var(--space-sm) !important;
+    flex: 1 1 100%;
+    min-height: unset !important;
+  }
+
+  /* Hide Mission Log on Mobile - too verbose */
+  .dashboard-controls>.glass-panel:last-child {
+    display: none;
+  }
+
+  /* Compact Control Panel */
+  .dashboard-controls .hero-text {
+    font-size: 1.25rem !important;
+  }
+
+  .dashboard-controls .btn {
+    padding: var(--space-sm) var(--space-md) !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* Hide non-essential elements */
+  .compact-h,
+  .compact-text {
+    font-size: 0.65rem !important;
+    margin-bottom: var(--space-xs) !important;
+  }
+
+  /* Button adjustments */
+  .btn {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.75rem;
+  }
+
+  .btn-secondary {
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  /* Glass panel compact */
+  .glass-panel {
+    border-radius: var(--radius-sm);
+    padding: var(--space-sm);
+  }
+
+  /* Chart mode toggle - compact */
+  .dashboard-chart>div:first-child {
+    gap: 2px !important;
+    padding: 0 !important;
+  }
+
+  .dashboard-chart>div:first-child .btn {
+    padding: 2px 6px !important;
+    font-size: 0.65rem !important;
+  }
+}
+
+/* Extra small screens - Ultra compact */
+@media (max-width: 400px) {
+  .dashboard-container {
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .dashboard-header {
+    height: 30px !important;
+  }
+
+  .dashboard-header h1 {
+    font-size: 0.75rem !important;
+  }
+
+  .dashboard-buckets>.glass-panel {
+    padding: 4px !important;
+  }
+
+  .dashboard-buckets .hero-text {
+    font-size: 0.75rem !important;
   }
 }
 
