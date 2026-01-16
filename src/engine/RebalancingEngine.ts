@@ -1,4 +1,5 @@
 import type { GameState, BucketState } from '../types';
+import { SurvivalOptimizer } from './OptimizationEngine';
 
 export function applyRebalancing(state: GameState): GameState {
     const strategy = state.config.rebalancingStrategy;
@@ -202,6 +203,51 @@ export function applyRebalancing(state: GameState): GameState {
             const target = totalWealth * conf.allocation;
             newBuckets[i].balance = target;
         });
+    } else if (strategy === 'AI_Max_Survival') {
+        // AI Optimization Logic
+        try {
+            // Lazy load or import at top (assuming import exists)
+            // But since this is a pure function file, we rely on imports.
+            const targetAllocations = SurvivalOptimizer.findOptimalAllocation(state);
+
+            // Rebalance to targetAllocations
+            // We do a simple diff and move
+            const currentTotal = totalWealth;
+
+            // Clean 2-pass rebalance logic follows...
+
+            // Clean 2-pass rebalance
+            const surpluses: { idx: number, amount: number }[] = [];
+            const deficits: { idx: number, amount: number }[] = [];
+
+            newBuckets.forEach((b, i) => {
+                const target = currentTotal * targetAllocations[i];
+                const diff = b.balance - target;
+                if (diff > 10) surpluses.push({ idx: i, amount: diff });
+                else if (diff < -10) deficits.push({ idx: i, amount: -diff });
+            });
+
+            // Move Surplus -> Deficit
+            surpluses.forEach(source => {
+                while (source.amount > 1 && deficits.length > 0) {
+                    const dest = deficits[0];
+                    const moveAmount = Math.min(source.amount, dest.amount);
+
+                    newBuckets[source.idx].balance -= moveAmount;
+                    newBuckets[dest.idx].balance += moveAmount;
+
+                    source.amount -= moveAmount;
+                    dest.amount -= moveAmount;
+
+                    logMove(source.idx, dest.idx, moveAmount, 'AI Adjustment'); // Generic reason
+
+                    if (dest.amount < 1) deficits.shift();
+                }
+            });
+
+        } catch (e) {
+            console.error("AI Optimizer Failed:", e);
+        }
     }
 
     // Attach moves to the latest history item

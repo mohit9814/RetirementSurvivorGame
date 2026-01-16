@@ -11,6 +11,7 @@ import ExpenseReveal from './components/ExpenseReveal';
 import WelcomeScreen from './components/WelcomeScreen';
 import Leaderboard from './components/Leaderboard';
 import GenieNotification from './components/GenieNotification';
+import ComparisonChart from './components/ComparisonChart';
 import { saveGameResult, calculateScore } from './utils/storage';
 import type { GameConfig, LeaderboardEntry } from './types';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -29,11 +30,11 @@ function App() {
   const [transferSource, setTransferSource] = useState<number | null>(null);
 
   // Chart Mode State
-  const [chartMode, setChartMode] = useState<'wealth' | 'buckets' | 'allocation'>('wealth');
+  const [chartMode, setChartMode] = useState<'wealth' | 'buckets' | 'allocation' | 'comparison'>('wealth');
 
   // Use the game hook
   const { gameState, nextYear, transfer, restartGame, updateConfig, playback } = useGame();
-  const { speed, setSpeed, isPlaying, togglePlay } = playback;
+  const { speed } = playback;
 
   // Save Game Result on Completion
   useEffect(() => {
@@ -108,7 +109,7 @@ function App() {
                 year={gameState.currentYear}
                 speed={speed}
               />
-              <header className="dashboard-header" style={{ padding: '0 0.5rem' }}>
+              <header className="dashboard-header" style={{ padding: '0 0.5rem', position: 'relative', zIndex: 101 }}>
                 <h1 style={{
                   fontSize: '1.25rem', fontWeight: 700, margin: 0, letterSpacing: '-0.03em',
                   background: 'linear-gradient(to right, #38bdf8, #818cf8)',
@@ -135,6 +136,53 @@ function App() {
                           <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
                           <circle cx="12" cy="12" r="3"></circle>
                         </svg>
+                      </button>
+                      <button
+                        onClick={() => {
+                          try {
+                            // Global CSV Export Logic
+                            const headers = ['Year', 'Total Wealth (Cr)', 'Tax Paid', 'Withdrawn', 'B1 Balance', 'B1 Return', 'B2 Balance', 'B2 Return', 'B3 Balance', 'B3 Return', 'Rebalancing Log'];
+                            if (!gameState.history || gameState.history.length === 0) {
+                              alert("No simulation data to export yet.");
+                              return;
+                            }
+                            const rows = gameState.history.map(h => {
+                              // Escape quotes in log
+                              const log = h.rebalancingMoves ? `"${h.rebalancingMoves.replace(/"/g, '""').replace(/\n/g, ' ')}"` : '""';
+                              return [
+                                h.year,
+                                (h.totalWealth / 10000000).toFixed(4),
+                                h.taxPaid.toFixed(2),
+                                h.withdrawn.toFixed(2),
+                                h.buckets[0].balance.toFixed(2),
+                                (h.buckets[0].lastYearReturn * 100).toFixed(2) + '%',
+                                h.buckets[1].balance.toFixed(2),
+                                (h.buckets[1].lastYearReturn * 100).toFixed(2) + '%',
+                                h.buckets[2].balance.toFixed(2),
+                                (h.buckets[2].lastYearReturn * 100).toFixed(2) + '%',
+                                log
+                              ].join(',');
+                            });
+
+                            const csvContent = [headers.join(','), ...rows].join('\n');
+                            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.setAttribute('href', url);
+                            link.setAttribute('download', `simulation_data_${gameState.sessionId || 'run'}.csv`);
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            setTimeout(() => URL.revokeObjectURL(url), 100); // Slight delay to ensure download starts
+                          } catch (err) {
+                            console.error("Export failed:", err);
+                            alert("Failed to export data. See console for details.");
+                          }
+                        }}
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem' }}
+                      >
+                        ⬇ Export Data
                       </button>
                     </>
                   )}
@@ -170,10 +218,7 @@ function App() {
                 trigger={expenseTrigger}
               />
 
-              <GenieNotification
-                latestMoves={gameState.history[gameState.currentYear]?.rebalancingMoves}
-                year={gameState.currentYear}
-              />
+
 
               {
                 !hasStarted ? (
@@ -201,28 +246,36 @@ function App() {
                     </section>
 
                     {/* Chart Section */}
-                    <section className="dashboard-chart" style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', minHeight: '300px' }}>
-                      <div style={{ position: 'absolute', top: '0.5rem', right: '1rem', zIndex: 10, display: 'flex', gap: '0.5rem', background: 'rgba(0,0,0,0.5)', padding: '0.25rem', borderRadius: '4px' }}>
+                    {/* Chart Section */}
+                    <section className="dashboard-chart" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '300px', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', padding: '0 0.5rem' }}>
                         <button
                           className="btn"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'wealth' ? 'var(--color-primary)' : 'transparent', opacity: chartMode === 'wealth' ? 1 : 0.7 }}
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'wealth' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'wealth' ? 1 : 0.7 }}
                           onClick={() => setChartMode('wealth')}
                         >
                           Wealth
                         </button>
                         <button
                           className="btn"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'buckets' ? 'var(--color-primary)' : 'transparent', opacity: chartMode === 'buckets' ? 1 : 0.7 }}
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'buckets' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'buckets' ? 1 : 0.7 }}
                           onClick={() => setChartMode('buckets')}
                         >
                           Buckets
                         </button>
                         <button
                           className="btn"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'allocation' ? 'var(--color-primary)' : 'transparent', opacity: chartMode === 'allocation' ? 1 : 0.7 }}
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'allocation' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'allocation' ? 1 : 0.7 }}
                           onClick={() => setChartMode('allocation')}
                         >
                           Alloc %
+                        </button>
+                        <button
+                          className="btn"
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'comparison' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'comparison' ? 1 : 0.7 }}
+                          onClick={() => setChartMode('comparison')}
+                        >
+                          GOD Mode
                         </button>
                       </div>
 
@@ -232,6 +285,8 @@ function App() {
                           survivalYears={gameState.config.survivalYears}
                           currentYear={gameState.currentYear}
                         />
+                      ) : chartMode === 'comparison' ? (
+                        <ComparisonChart gameState={gameState} />
                       ) : (
                         <BucketStackChart
                           history={gameState.history}

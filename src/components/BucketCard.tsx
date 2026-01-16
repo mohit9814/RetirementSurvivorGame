@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart, Bar, Cell, ResponsiveContainer, XAxis, Tooltip, ReferenceLine } from 'recharts';
+import { BarChart, Bar, Cell, ResponsiveContainer, Tooltip, ReferenceLine } from 'recharts';
 import type { BucketState, YearlyResult } from '../types';
 import { formatCurrency } from '../utils/currency';
 
@@ -41,7 +41,7 @@ const BucketCard: React.FC<BucketCardProps> = ({
     };
 
     return (
-        <div className={`glass-panel`}
+        <div className={`glass - panel`}
             style={{
                 width: '100%',
                 padding: '1rem', flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '0.75rem',
@@ -58,7 +58,7 @@ const BucketCard: React.FC<BucketCardProps> = ({
                     <div style={{
                         width: '8px', height: '8px', borderRadius: '50%',
                         background: getBucketColor(bucket.type),
-                        boxShadow: `0 0 8px ${getBucketColor(bucket.type)}`
+                        boxShadow: `0 0 8px ${getBucketColor(bucket.type)} `
                     }} />
                     <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
                         {bucket.name}
@@ -74,7 +74,7 @@ const BucketCard: React.FC<BucketCardProps> = ({
                 {/* Liquid Fill */}
                 <div style={{
                     position: 'absolute', bottom: 0, left: 0, right: 0,
-                    height: `${Math.max(percentage, 5)}%`,
+                    height: `${Math.max(percentage, 5)}% `,
                     background: getBucketGradient(bucket.type),
                     transition: 'height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     opacity: 0.9,
@@ -83,7 +83,7 @@ const BucketCard: React.FC<BucketCardProps> = ({
 
                 {/* Meniscus / Top highlight */}
                 <div style={{
-                    position: 'absolute', bottom: `${Math.max(percentage, 5)}%`, left: 0, right: 0,
+                    position: 'absolute', bottom: `${Math.max(percentage, 5)}% `, left: 0, right: 0,
                     height: '2px', background: 'rgba(255,255,255,0.5)',
                     boxShadow: '0 0 10px rgba(255,255,255,0.5)',
                     transition: 'bottom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'
@@ -109,23 +109,35 @@ const BucketCard: React.FC<BucketCardProps> = ({
                 </div>
 
                 {/* Floating Investment Gain/Loss Animation */}
-                {currentYear > 0 && Math.abs(bucket.lastYearReturn) > 0.0001 && (
+                {/* Floating Investment Gain/Loss Animation */}
+                {currentYear > 0 && (
                     <div
                         key={currentYear} // Restart animation on year change
                         style={{
                             position: 'absolute',
-                            top: '40%', // Start near balance
+                            top: `${10 + (currentYear % 3) * 5}%`, // Stagger: 10%, 15%, 20% based on year to reduce pattern fatigue
                             right: '5%',
                             fontWeight: 'bold',
-                            fontSize: '1rem',
+                            fontSize: '1.2rem',
                             color: bucket.lastYearReturn >= 0 ? '#4ade80' : '#ef4444',
-                            animation: 'float-fade 2s ease-out forwards',
+                            background: 'rgba(15, 23, 42, 0.9)', // Dark background for contrast
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '999px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            animation: 'float-fade 4s ease-out forwards', // Slower animation
                             pointerEvents: 'none',
-                            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                            zIndex: 10
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)',
+                            zIndex: 20,
+                            opacity: Math.abs(bucket.lastYearReturn) < 0.000001 ? 0 : 1 // Hide if truly 0
                         }}
                     >
-                        {bucket.lastYearReturn > 0 ? '+' : '-'}{formatCurrency(Math.abs(bucket.balance * (bucket.lastYearReturn / (1 + bucket.lastYearReturn))))}
+                        {Math.abs(bucket.lastYearReturn) < 0.000001 ? (
+                            <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>No Change</span>
+                        ) : (
+                            <>
+                                {bucket.lastYearReturn > 0 ? '+' : '-'}{formatCurrency(Math.abs(bucket.balance * (bucket.lastYearReturn / (1 + bucket.lastYearReturn))))}
+                            </>
+                        )}
                     </div>
                 )}
             </div>
@@ -139,14 +151,14 @@ const BucketCard: React.FC<BucketCardProps> = ({
                                 cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                                 contentStyle={{ background: '#1e293b', border: '1px solid #475569', color: '#f8fafc', fontSize: '0.75rem', borderRadius: '4px', padding: '4px 8px' }}
                                 itemStyle={{ color: '#f8fafc' }}
-                                formatter={(val: number) => [`${val.toFixed(2)}%`, 'Return']}
-                                labelFormatter={(label) => `Year ${label}`}
+                                formatter={(val: any) => [`${val.toFixed(2)}% `, 'Return']}
+                                labelFormatter={(label) => `Year ${label} `}
                             />
                             {/* Dotted Average Line */}
                             <ReferenceLine y={avgReturn} stroke="rgba(255,255,255,0.3)" strokeDasharray="3 3" />
                             <Bar dataKey="return" radius={[2, 2, 0, 0]}>
                                 {chartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.return >= 0 ? 'rgba(34, 197, 94, 0.6)' : 'rgba(239, 68, 68, 0.6)'} />
+                                    <Cell key={`cell - ${index} `} fill={entry.return >= 0 ? 'rgba(34, 197, 94, 0.6)' : 'rgba(239, 68, 68, 0.6)'} />
                                 ))}
                             </Bar>
                         </BarChart>

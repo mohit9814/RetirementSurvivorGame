@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import type { RebalancingEvent } from '../types';
 import { formatCurrency } from '../utils/currency';
 
@@ -63,7 +63,8 @@ const GenieNotification: React.FC<GenieNotificationProps> = ({ latestMoves, year
                     // Use 'linear' or 'ease-out' for better readability while moving
                     animation: `wizard-fly ${durationSec}s ease-out forwards`,
                     animationDelay: `${delaySec}s`,
-                    opacity: 0
+                    opacity: 0,
+                    pointerEvents: 'none' // CRITICAL: Ensure invisible wizards don't block clicks
                 } as React.CSSProperties;
 
                 return (

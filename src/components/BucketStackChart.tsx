@@ -14,7 +14,7 @@ const BucketStackChart: React.FC<BucketStackChartProps> = ({ history, survivalYe
     const maxYear = Math.max(survivalYears, currentYear, history.length > 0 ? history[history.length - 1].year : 0);
 
     // Transform history for stack chart
-    const data = [];
+    const data: any[] = []; // Cast to any[] as requested
     for (let i = 0; i <= maxYear; i++) {
         // Loose comparison for year safety, though strict should work
         const historyItem = history.find(h => h.year == i);
@@ -129,6 +129,7 @@ const BucketStackChart: React.FC<BucketStackChartProps> = ({ history, survivalYe
                                 }
                                 return [`₹${num.toFixed(2)} Cr`, label];
                             }}
+
                             labelFormatter={(label) => {
                                 const item = data.find(d => d.year === label);
                                 let suffix = '';

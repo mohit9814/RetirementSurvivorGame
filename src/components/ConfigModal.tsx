@@ -101,12 +101,22 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ config, isOpen, onClose, onSa
                         <option value="GlidePath">Declining Glide Path (90% {"->"} 50%)</option>
                         <option value="Custom">Custom Strategy</option>
                         <option value="Tactical">Tactical (Safety + Profit Taking)</option>
+                        <option value="AI_Max_Survival">AI Self-Adjusting (Survival Optimization)</option>
                     </select>
 
                     <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '0.5rem' }}>
                         {localConfig.rebalancingStrategy === 'RefillBucket1' && "Automatically moves funds from Bucket 2/3 to keep 2 years of expenses in Bucket 1."}
                         {localConfig.rebalancingStrategy === 'FixedAllocation' && "Resets all buckets to their initial allocation % every year."}
                         {(!localConfig.rebalancingStrategy || localConfig.rebalancingStrategy === 'None') && "No automatic moves. You control the transfers."}
+                        {localConfig.rebalancingStrategy === 'AI_Max_Survival' && (
+                            <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: 'rgba(124, 58, 237, 0.2)', borderRadius: '4px', border: '1px solid rgba(124, 58, 237, 0.5)' }}>
+                                <div style={{ fontSize: '0.8rem', color: '#c4b5fd' }}>
+                                    <strong>🤖 AI Learning Engine</strong><br />
+                                    Runs hundreds of Monte Carlo simulations before every year to find the optimal allocation that maximizes your survival probability.<br />
+                                    <em>Adapts to market conditions instantly.</em>
+                                </div>
+                            </div>
+                        )}
                         {localConfig.rebalancingStrategy === 'Custom' && (
                             <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
                                 <label style={{ display: 'block', marginBottom: '0.25rem' }}>Target Cash Buffer (Years)</label>

@@ -32,7 +32,7 @@ export interface RebalancingEvent {
     fromBucketIndex: number;
     toBucketIndex: number;
     amount: number;
-    reason: 'Safety Refill' | 'Profit Skimming' | 'Buy Low Opportunity' | 'Glide Path Adjustment' | 'Glide Path Rebalance Up' | 'Safety Top-up' | 'Deploying Idle Cash' | 'Allocation Reset';
+    reason: 'Safety Refill' | 'Profit Skimming' | 'Buy Low Opportunity' | 'Glide Path Adjustment' | 'Glide Path Rebalance Up' | 'Safety Top-up' | 'Deploying Idle Cash' | 'Allocation Reset' | 'AI Adjustment';
     taxIncurred?: number;
 }
 
@@ -46,6 +46,7 @@ export interface GameState {
     isGameOver: boolean;
     gameOverReason?: string;
     sessionId: string; // Unique identifier for this run
+    shadowStrategies?: Record<string, GameState>; // Parallel simulations (GOD Mode)
 }
 
 export interface GameConfig {
@@ -54,7 +55,7 @@ export interface GameConfig {
     inflationRate: number;
     survivalYears: number; // Target duration
     enableTaxation: boolean; // Enable/Disable tax simulation
-    rebalancingStrategy: 'None' | 'RefillBucket1' | 'Tactical' | 'GlidePath';
+    rebalancingStrategy: 'None' | 'RefillBucket1' | 'Tactical' | 'GlidePath' | 'FixedAllocation' | 'AI_Max_Survival' | 'Custom';
     customRebalancingTargetYears?: number; // For Custom Strategy
     tacticalCashBufferYears?: number; // For Tactical Strategy (Safety)
     bucketConfigs: BucketConfig[];

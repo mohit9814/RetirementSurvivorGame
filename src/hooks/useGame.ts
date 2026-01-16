@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { GameState, GameConfig } from '../types';
 import { initializeGame, advanceYear, transferFunds, INITIAL_CONFIG } from '../engine/GameEngine';
-import { applyRebalancing } from '../engine/RebalancingEngine';
 import { saveConfig } from '../utils/storage';
 
 console.log("DEBUG: useGame.ts evaluating");

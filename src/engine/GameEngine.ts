@@ -1,7 +1,7 @@
-import type { GameState, BucketState, YearlyResult, GameConfig } from '../types';
-import { simulateYearlyReturn, getMarketEventDescription } from './MarketEngine';
-import { calculateNewRegimeTax, calculateLTCG } from '../utils/tax';
+import type { GameState, BucketState, GameConfig } from '../types';
+import { getMarketEventDescription } from './MarketEngine';
 import { applyRebalancing } from './RebalancingEngine';
+import { simulateNextYearPhysics } from './PhysicsEngine';
 
 console.log("DEBUG: GameEngine.ts evaluating");
 
@@ -27,7 +27,7 @@ export function initializeGame(config: GameConfig = INITIAL_CONFIG): GameState {
         lastYearReturn: 0
     }));
 
-    return {
+    const initialState: GameState = {
         currentYear: 0,
         startYear: new Date().getFullYear(),
         maxYears: config.survivalYears,
@@ -43,8 +43,28 @@ export function initializeGame(config: GameConfig = INITIAL_CONFIG): GameState {
         }],
         config,
         isGameOver: false,
-        sessionId: Date.now().toString() + Math.random().toString(36).substr(2, 9), // Unique Session ID
+        sessionId: Date.now().toString() + Math.random().toString(36).substr(2, 9),
     };
+
+    // Initialize Shadow Strategies (GOD Mode)
+    // We create parallel universes for specific strategies to compare against
+    const strategiesToCompare = ['RefillBucket1', 'GlidePath', 'FixedAllocation', 'AI_Max_Survival', 'Tactical'];
+    const shadows: Record<string, GameState> = {};
+
+    strategiesToCompare.forEach(strat => {
+        if (strat === config.rebalancingStrategy) return; // Don't shadow self
+
+        shadows[strat] = {
+            ...JSON.parse(JSON.stringify(initialState)),
+            config: {
+                ...config,
+                rebalancingStrategy: strat as any
+            }
+        };
+    });
+
+    initialState.shadowStrategies = shadows;
+    return initialState;
 }
 
 export function advanceYear(currentState: GameState, expensesOverride?: number): GameState {
@@ -57,147 +77,72 @@ export function advanceYear(currentState: GameState, expensesOverride?: number):
     console.log("Current Wealth:", currentState.buckets.reduce((s, b) => s + b.balance, 0));
     currentState.buckets.forEach(b => console.log(`${b.name}: ${b.balance}`));
 
-    // 1. Calculate Inflation & Expenses
-    // ... (existing variable declarations) ...
-    const inflationMultiplier = Math.pow(1 + currentState.config.inflationRate, nextYear);
-    const currentExpenses = (expensesOverride || currentState.config.initialExpenses) * inflationMultiplier;
+    // 1. Run Main Physics Simulation (Generates Market Returns)
+    const physicsResult = simulateNextYearPhysics(currentState, expensesOverride);
 
-    // 1. Simulate Market Returns & Calculate Gross Income
-    let totalIncomeGain = 0; // For Bucket 1 & 2
-    let totalLtcgGain = 0;   // For Bucket 3
-    let bucketWiseGains: number[] = [];
-
-    const bucketsAfterReturn = currentState.buckets.map((bucket, index) => {
-        const config = currentState.config.bucketConfigs[index];
-        const yearlyReturnRate = simulateYearlyReturn(config.expectedReturn, config.volatility);
-
-        // Apply return to STARTING balance
-        const gain = bucket.balance * yearlyReturnRate;
-        const newBalance = bucket.balance + gain;
-
-        bucketWiseGains.push(gain);
-
-        if (bucket.type === 'Cash' || bucket.type === 'Income') {
-            if (gain > 0) totalIncomeGain += gain;
-        } else if (bucket.type === 'Growth') {
-            if (gain > 0) totalLtcgGain += gain;
-        }
-
-        return {
-            ...bucket,
-            balance: newBalance,
-            lastYearReturn: yearlyReturnRate
-        };
-    });
-
-    // 2. Calculate Taxes (if enabled)
-    let incomeTax = 0;
-    let ltcgTax = 0;
-
-    if (currentState.config.enableTaxation) {
-        incomeTax = calculateNewRegimeTax(totalIncomeGain);
-        ltcgTax = calculateLTCG(totalLtcgGain);
-    }
-
-    const totalTax = incomeTax + ltcgTax;
-
-    // 3. Deduct Taxes
-    if (incomeTax > 0) {
-        if (bucketsAfterReturn[1].balance >= incomeTax) {
-            bucketsAfterReturn[1].balance -= incomeTax;
-        } else {
-            const remainder = incomeTax - bucketsAfterReturn[1].balance;
-            bucketsAfterReturn[1].balance = 0;
-            bucketsAfterReturn[0].balance -= remainder;
-        }
-    }
-
-    if (ltcgTax > 0) {
-        bucketsAfterReturn[2].balance -= ltcgTax;
-    }
-
-    // 4. Withdraw Expenses
-    let pendingExpenses = currentExpenses;
-    let gameOverReason = undefined;
-
-    if (bucketsAfterReturn[0].balance >= pendingExpenses) {
-        bucketsAfterReturn[0].balance -= pendingExpenses;
-        pendingExpenses = 0;
-    } else {
-        // Bucket 1 empty, try Emergency Refill from B2 then B3
-        pendingExpenses -= bucketsAfterReturn[0].balance;
-        bucketsAfterReturn[0].balance = 0;
-
-        // Try Bucket 2
-        if (bucketsAfterReturn[1].balance >= pendingExpenses) {
-            bucketsAfterReturn[1].balance -= pendingExpenses;
-            pendingExpenses = 0;
-        } else {
-            pendingExpenses -= bucketsAfterReturn[1].balance;
-            bucketsAfterReturn[1].balance = 0;
-        }
-
-        // Try Bucket 3
-        if (pendingExpenses > 0) {
-            if (bucketsAfterReturn[2].balance >= pendingExpenses) {
-                bucketsAfterReturn[2].balance -= pendingExpenses;
-                pendingExpenses = 0;
-            } else {
-                pendingExpenses -= bucketsAfterReturn[2].balance;
-                bucketsAfterReturn[2].balance = 0;
+    // 2. Advance Shadow Strategies (Using SAME Market Returns)
+    const nextShadows: Record<string, GameState> = {};
+    if (currentState.shadowStrategies) {
+        Object.entries(currentState.shadowStrategies).forEach(([stratName, shadowState]) => {
+            if (shadowState.isGameOver) {
+                nextShadows[stratName] = shadowState;
+                return;
             }
-        }
 
-        if (pendingExpenses > 0) {
-            gameOverReason = "Bankruptcy! Total Portfolio Depleted.";
-        }
+            // Sync Shadow Expenses (assuming same override applies)
+            // Note: Shadow doesn't have UI override access usually, so we pass same.
+
+            // Run Physics with FIXED returns
+            const shadowPhysics = simulateNextYearPhysics(shadowState, expensesOverride, physicsResult.generatedReturns);
+
+            const intermediateShadow: GameState = {
+                ...shadowState,
+                currentYear: nextYear,
+                buckets: shadowPhysics.buckets,
+                history: [...shadowState.history, {
+                    year: nextYear,
+                    buckets: JSON.parse(JSON.stringify(shadowPhysics.buckets)),
+                    totalWealth: shadowPhysics.totalWealth,
+                    withdrawn: shadowPhysics.expensesPaid,
+                    inflation: shadowPhysics.inflationMultiplier,
+                    portfolioReturn: shadowPhysics.portfolioReturn,
+                    taxPaid: shadowPhysics.totalTax,
+                    marketEvent: getMarketEventDescription(shadowPhysics.buckets[2].lastYearReturn)
+                }],
+                isGameOver: !!shadowPhysics.gameOverReason,
+                gameOverReason: shadowPhysics.gameOverReason,
+                config: shadowState.config
+            };
+
+            // Apply Rebalancing for Shadow
+            nextShadows[stratName] = !shadowPhysics.gameOverReason ? applyRebalancing(intermediateShadow) : intermediateShadow;
+        });
     }
 
-    const totalWealth = bucketsAfterReturn.reduce((sum, b) => sum + b.balance, 0);
-
-    // Calculate Portfolio Return
-    const previousWealth = currentState.buckets.reduce((sum, b) => sum + b.balance, 0);
-    const totalGains = bucketWiseGains.reduce((sum, g) => sum + g, 0);
-    const portfolioReturn = previousWealth > 0 ? totalGains / previousWealth : 0;
-
-    // Check Victory (Survival Duration Met)
-    // We check if nextYear reached the target
-    if (!gameOverReason && nextYear >= currentState.config.survivalYears && totalWealth > 0) {
-        gameOverReason = `Victory! You survived ${currentState.config.survivalYears} years.`;
-    }
-
-    // Check Global Bankruptcy
-    if (totalWealth <= 0) {
-        gameOverReason = "Bankruptcy! Total Portfolio Depleted.";
-    }
-
-    const marketEvent = getMarketEventDescription(bucketsAfterReturn[2].lastYearReturn);
-
-    const newHistoryItem: YearlyResult = {
-        year: nextYear,
-        buckets: JSON.parse(JSON.stringify(bucketsAfterReturn)),
-        totalWealth,
-        withdrawn: currentExpenses - pendingExpenses,
-        inflation: inflationMultiplier,
-        portfolioReturn,
-        taxPaid: totalTax,
-        marketEvent
-    };
-
-    // 5. Apply Rebalancing Logic
-    // We create a temporary state to pass to the engine, then extract the buckets
+    // 3. Apply Rebalancing Logic for Main State
     const intermediateState: GameState = {
         ...currentState,
         currentYear: nextYear,
-        buckets: bucketsAfterReturn,
-        history: [...currentState.history, newHistoryItem],
-        isGameOver: !!gameOverReason,
-        gameOverReason,
-        config: currentState.config // Pass config for strategy check
+        buckets: physicsResult.buckets,
+        history: [...currentState.history, {
+            year: nextYear,
+            buckets: JSON.parse(JSON.stringify(physicsResult.buckets)),
+            totalWealth: physicsResult.totalWealth,
+            withdrawn: physicsResult.expensesPaid,
+            inflation: physicsResult.inflationMultiplier,
+            portfolioReturn: physicsResult.portfolioReturn,
+            taxPaid: physicsResult.totalTax,
+            marketEvent: getMarketEventDescription(physicsResult.buckets[2].lastYearReturn)
+        }],
+        isGameOver: !!physicsResult.gameOverReason,
+        gameOverReason: physicsResult.gameOverReason,
+        config: currentState.config
     };
 
-    // Only rebalance if game is NOT over
-    const finalState = !gameOverReason ? applyRebalancing(intermediateState) : intermediateState;
+    const finalState = !physicsResult.gameOverReason ? applyRebalancing(intermediateState) : intermediateState;
+
+    // Attach evolved shadows
+    finalState.shadowStrategies = nextShadows;
 
     return finalState;
 }
