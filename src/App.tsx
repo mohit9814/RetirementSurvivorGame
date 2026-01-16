@@ -113,7 +113,7 @@ function App() {
               />
 
 
-              // ... (in App component)
+
 
               <header className="dashboard-header" style={{ padding: '0 0.5rem', position: 'relative', zIndex: 101, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

@@ -35,19 +35,20 @@ const MilestoneCelebration: React.FC<MilestoneCelebrationProps> = ({ year, survi
                     transition={{ type: "spring", stiffness: 200, damping: 15 }}
                     style={{
                         position: 'fixed',
-                        top: '50%',
+                        top: '10%', // Move to top instead of center
                         left: '50%',
-                        transform: 'translate(-50%, -50%)',
+                        transform: 'translateX(-50%)',
                         background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                        padding: '2rem 4rem',
-                        borderRadius: '20px',
-                        boxShadow: '0 0 50px rgba(255, 215, 0, 0.5)',
+                        padding: '0.75rem 1.5rem', // Much smaller padding
+                        borderRadius: '30px', // Pill shape
+                        boxShadow: '0 4px 15px rgba(255, 215, 0, 0.3)',
                         zIndex: 2000,
                         textAlign: 'center',
                         color: 'black',
                         fontWeight: 'bold',
-                        fontSize: '1.5rem',
-                        border: '4px solid white'
+                        fontSize: '1rem', // Smaller text
+                        border: '2px solid white', // Thinner border
+                        whiteSpace: 'nowrap'
                     }}
                 >
                     {message}

@@ -273,10 +273,12 @@ h4 {
     font-size: 1rem !important;
   }
 
-  /* Hide leaderboard and export buttons on mobile */
+  /* Show leaderboard and export buttons on mobile, but compact */
   .dashboard-header .btn-secondary,
   .dashboard-header button[title="Advanced Settings (Geeks Only)"] {
-    display: none !important;
+    display: inline-flex !important;
+    padding: 2px 6px !important;
+    font-size: 0.7rem !important;
   }
 
   /* Buckets Section - Stack vertically or small grid */
