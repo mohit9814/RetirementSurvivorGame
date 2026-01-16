@@ -12,7 +12,9 @@ import WelcomeScreen from './components/WelcomeScreen';
 import Leaderboard from './components/Leaderboard';
 import GenieNotification from './components/GenieNotification';
 import ComparisonChart from './components/ComparisonChart';
+import { StrategyHeader } from './components/StrategyHeader';
 import { saveGameResult, calculateScore } from './utils/storage';
+import { formatCurrency } from './utils/currency';
 import type { GameConfig, LeaderboardEntry } from './types';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -109,15 +111,29 @@ function App() {
                 year={gameState.currentYear}
                 speed={speed}
               />
-              <header className="dashboard-header" style={{ padding: '0 0.5rem', position: 'relative', zIndex: 101 }}>
-                <h1 style={{
-                  fontSize: '1.25rem', fontWeight: 700, margin: 0, letterSpacing: '-0.03em',
-                  background: 'linear-gradient(to right, #38bdf8, #818cf8)',
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                  display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'
-                }} onClick={() => setShowLeaderboard(true)}>
-                  <span style={{ fontSize: '1.5rem' }}>🚀</span> Retirement Bucket Survivor
-                </h1>
+
+
+              // ... (in App component)
+
+              <header className="dashboard-header" style={{ padding: '0 0.5rem', position: 'relative', zIndex: 101, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <h1 style={{
+                    fontSize: '1.25rem', fontWeight: 700, margin: 0, letterSpacing: '-0.03em',
+                    background: 'linear-gradient(to right, #38bdf8, #818cf8)',
+                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                    display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'
+                  }} onClick={() => setShowLeaderboard(true)}>
+                    <span style={{ fontSize: '1.5rem' }}>🚀</span> Retirement Bucket Survivor
+                  </h1>
+
+                  {/* Strategy Selector (Only when running) */}
+                  {hasStarted && (
+                    <StrategyHeader
+                      currentStrategy={gameState.config.rebalancingStrategy}
+                      onStrategyChange={(strat) => updateConfig({ ...gameState.config, rebalancingStrategy: strat })}
+                    />
+                  )}
+                </div>
 
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                   <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem' }} onClick={() => setShowLeaderboard(true)}>
@@ -129,8 +145,8 @@ function App() {
                       <button
                         onClick={() => setShowConfig(true)}
                         className="btn"
-                        style={{ background: 'rgba(255,255,255,0.1)', padding: '0.5rem', display: 'flex', alignItems: 'center' }}
-                        title="Simulation Settings"
+                        style={{ background: 'rgba(255,255,255,0.1)', padding: '0.5rem', display: 'flex', alignItems: 'center', color: '#94a3b8' }}
+                        title="Advanced Settings (Geeks Only)"
                       >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
@@ -147,8 +163,21 @@ function App() {
                               return;
                             }
                             const rows = gameState.history.map(h => {
-                              // Escape quotes in log
-                              const log = h.rebalancingMoves ? `"${h.rebalancingMoves.replace(/"/g, '""').replace(/\n/g, ' ')}"` : '""';
+                              // Serialize logs: safely handle array vs string
+                              let logString = '';
+                              if (Array.isArray(h.rebalancingMoves)) {
+                                const buckets = ['Cash', 'Income', 'Growth'];
+                                logString = h.rebalancingMoves.map(m => {
+                                  const from = buckets[m.fromBucketIndex] || `B${m.fromBucketIndex + 1}`;
+                                  const to = buckets[m.toBucketIndex] || `B${m.toBucketIndex + 1}`;
+                                  return `${m.reason}: ${formatCurrency(m.amount)} (${from} -> ${to})`;
+                                }).join('; ');
+                              } else if (typeof h.rebalancingMoves === 'string') {
+                                logString = h.rebalancingMoves;
+                              }
+
+                              const log = `"${logString.replace(/"/g, '""').replace(/\n/g, ' ')}"`;
+
                               return [
                                 h.year,
                                 (h.totalWealth / 10000000).toFixed(4),

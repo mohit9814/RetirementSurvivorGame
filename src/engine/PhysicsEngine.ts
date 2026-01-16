@@ -74,7 +74,18 @@ export function simulateNextYearPhysics(
     }
 
     // 4. Withdraw Expenses
-    let pendingExpenses = currentExpenses;
+    // Flexible Spending Experiment: Cut expenses if Growth bucket tanks.
+    const growthRet = bucketsAfterReturn[2].lastYearReturn;
+    let flexCut = 0;
+    if (growthRet < -0.15) flexCut = 0.15;       // >15% Drop -> 15% Cut
+    else if (growthRet < -0.10) flexCut = 0.10;  // >10% Drop -> 10% Cut
+    else if (growthRet < 0) flexCut = 0.05;      // Any Drop  -> 5% Cut
+
+    if (flexCut > 0) {
+        // console.log(`[Physics] Market Down (${(growthRet*100).toFixed(1)}%), cutting expenses by ${(flexCut*100).toFixed(0)}%`);
+    }
+
+    let pendingExpenses = currentExpenses * (1 - flexCut);
     let gameOverReason: string | undefined = undefined;
 
     if (bucketsAfterReturn[0].balance >= pendingExpenses) {

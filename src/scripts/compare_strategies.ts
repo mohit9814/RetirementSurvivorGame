@@ -3,8 +3,8 @@ import { initializeGame, advanceYear } from '../engine/GameEngine';
 import { INITIAL_CONFIG } from '../engine/GameEngine';
 import type { GameState, GameConfig } from '../types';
 
-const SIMULATIONS = 20; // Fast enough for TSX, statistically useful
-const YEARS = 40;
+const SIMULATIONS = 100; // Feasible High-Scale
+const YEARS = 45;
 
 const STRATEGIES = ['None', 'RefillBucket1', 'Tactical', 'GlidePath', 'FixedAllocation', 'AI_Max_Survival'];
 

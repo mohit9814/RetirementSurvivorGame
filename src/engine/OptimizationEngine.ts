@@ -1,4 +1,5 @@
-import type { GameState } from "../types";
+
+import type { GameState, BucketState } from "../types";
 import { simulateNextYearPhysics } from "./PhysicsEngine";
 
 export class SurvivalOptimizer {
@@ -10,9 +11,9 @@ export class SurvivalOptimizer {
      * @param simulationsPerStrategy Number of simulations to run per candidate allocation (default 50)
      * @param simulationHorizon limit how many years into future we look (default: until end of game)
      */
-    static findOptimalAllocation(currentState: GameState, simulationsPerStrategy: number = 50, simulationHorizon?: number): number[] {
+    static findOptimalAllocation(currentState: GameState, simulationsPerStrategy: number = 20, _simulationHorizon?: number): number[] {
         console.log(`[Optimizer] Starting Monte Carlo optimization for Year ${currentState.currentYear}`);
-        const candidates = this.generateCandidateAllocations();
+        const candidates = this.generateCandidateAllocations(currentState);
         let bestCandidate = candidates[0];
         let bestScore = -1;
 
@@ -21,6 +22,36 @@ export class SurvivalOptimizer {
         const currentAllocation = totalWealth > 0
             ? currentState.buckets.map(b => b.balance / totalWealth)
             : [1, 0, 0]; // Default if empty
+
+        // Include Current Allocation in candidates to allow "Do Nothing" (Status Quo bias)
+        // This is critical for reducing churn.
+        if (totalWealth > 0) {
+            candidates.push(currentAllocation);
+        }
+
+        // Calculate Expense Requirements (Safety Floor)
+        const currentExpenses = currentState.config.initialExpenses * Math.pow(1 + currentState.config.inflationRate, currentState.currentYear);
+        const reqB1 = currentExpenses * 2; // 2 Years in Cash
+        const reqB2 = currentExpenses * 4; // 4 Years in Income
+        const totalReq = reqB1 + reqB2;
+
+        // Generate "Safety First" Candidate (Explicitly satisfy user constraints)
+        if (totalWealth > 0) {
+            let safeAlloc = [0, 0, 0];
+            if (totalWealth >= totalReq) {
+                // Determine ratios for exact compliance
+                const b1Ratio = reqB1 / totalWealth;
+                const b2Ratio = reqB2 / totalWealth;
+                const b3Ratio = 1 - (b1Ratio + b2Ratio);
+                safeAlloc = [b1Ratio, b2Ratio, Math.max(0, b3Ratio)];
+            } else {
+                // Crisis: Not enough money for 2+4 years. Fill B1, then B2.
+                const b1Ratio = Math.min(1, reqB1 / totalWealth);
+                const remaining = 1 - b1Ratio;
+                safeAlloc = [b1Ratio, remaining, 0];
+            }
+            candidates.push(safeAlloc);
+        }
 
         candidates.forEach(alloc => {
             // Note: Updated signature takes 3 args: state, alloc, simCount
@@ -31,7 +62,7 @@ export class SurvivalOptimizer {
             let score = 0;
 
             // Format for logging
-            const allocStr = `[${alloc[0] * 100},${alloc[1] * 100},${(alloc[2] * 100).toFixed(0)}%]`;
+            const allocStr = `[${(alloc[0] * 100).toFixed(1)},${(alloc[1] * 100).toFixed(1)},${(alloc[2] * 100).toFixed(0)}%]`;
 
             if (result.survivalRate < 0.2) {
                 // Crisis Mode: Maximize time until ruin
@@ -49,6 +80,70 @@ export class SurvivalOptimizer {
                 score += alloc[2];
             }
 
+            // ---------------------------------------------------------
+            // UNIVERSAL SAFETY CONSTRAINT (Applied to ALL modes)
+            // ---------------------------------------------------------
+
+            // Loop 10: "Floors & Roofs" (The Sovereign Strategy)
+            // Constraints are back, but smarter.
+            if (true) {
+                // Check Market State
+                const growthReturn = currentState.buckets[2].lastYearReturn;
+                const isCrash = growthReturn < -0.10;
+
+                // --- FLOORS (Safety) ---
+                let hardFloorB1 = currentExpenses * 1.0;
+                let hardFloorB2 = currentExpenses * 2.0;
+
+                // Crisis Relaxation
+                if (isCrash) {
+                    hardFloorB1 = currentExpenses * 0.5;
+                    hardFloorB2 = currentExpenses * 1.0;
+                }
+
+                const projectedB1 = alloc[0] * totalWealth;
+                const projectedB2 = alloc[1] * totalWealth;
+                const projectedSafe = projectedB1 + projectedB2;
+
+                // B1 Penalties
+                if (projectedB1 < hardFloorB1 * 0.99) {
+                    score -= 1000; // Hard Floor
+                } else {
+                    const softTargetB1 = currentExpenses * 2.5;
+                    if (projectedB1 < softTargetB1) {
+                        const deficit = (softTargetB1 - projectedB1) / currentExpenses;
+                        score -= deficit * 20; // Soft Floor Gradient
+                    }
+                }
+
+                // B2 Penalties
+                if (projectedB2 < hardFloorB2 * 0.99) {
+                    score -= 500; // Hard Floor
+                } else {
+                    const softTargetB2 = currentExpenses * 4.0;
+                    if (projectedB2 < softTargetB2) {
+                        const deficit = (softTargetB2 - projectedB2) / currentExpenses;
+                        score -= deficit * 10; // Soft Floor Gradient
+                    }
+                }
+
+                // --- ROOFS (Efficiency) ---
+                // Hard Roof: Total Safe Assets shouldn't exceed 10 years (Opportunity Cost)
+                const hardRoofSafe = currentExpenses * 10.0;
+                if (projectedSafe > hardRoofSafe) {
+                    const excess = (projectedSafe - hardRoofSafe) / currentExpenses;
+                    score -= excess * 50; // Penalty for Hoarding
+                }
+
+                // --- RICH MODE (War Chest) ---
+                // If we are in the "Comfort Zone" (Safe > 6 years AND < 10 years)
+                // We reward it. This encourages building the buffer up to the roof.
+                const comfortZoneStart = currentExpenses * 6.0;
+                if (projectedSafe > comfortZoneStart && projectedSafe < hardRoofSafe) {
+                    score += 50;
+                }
+            } // End of Sovereign Strategy
+
             console.log(`[Optimizer] Allocation ${allocStr}: Survival ${(result.survivalRate * 100).toFixed(1)}%, Avg Years ${result.avgSurvivalYears.toFixed(1)}, Score ${score.toFixed(1)}`);
 
             if (score > bestScore) {
@@ -57,7 +152,7 @@ export class SurvivalOptimizer {
             }
         });
 
-        const winStr = `[${bestCandidate[0] * 100},${bestCandidate[1] * 100},${(bestCandidate[2] * 100).toFixed(0)}%]`;
+        const winStr = `[${(bestCandidate[0] * 100).toFixed(1)},${(bestCandidate[1] * 100).toFixed(1)},${(bestCandidate[2] * 100).toFixed(0)}%]`;
         console.log(`[Optimizer] WINNER: ${winStr} with Score ${bestScore.toFixed(1)}`);
 
         return bestCandidate;
@@ -69,7 +164,7 @@ export class SurvivalOptimizer {
      * Simplified 3-Bucket Grid search to avoid combinatorial explosion.
      * Focuses on shifting between Income(B2) and Growth(B3), keeping Cash(B1) relatively stable or minimal.
      */
-    private static generateCandidateAllocations(): number[][] {
+    private static generateCandidateAllocations(currentState: GameState): number[][] {
         const candidates: number[][] = [];
 
         // Fixed sets of heuristics for speed
@@ -85,9 +180,17 @@ export class SurvivalOptimizer {
         candidates.push([0.05, 0.35, 0.60]);
 
         // Aggressive
-        candidates.push([0.02, 0.28, 0.70]);
-        candidates.push([0.02, 0.18, 0.80]);
-        candidates.push([0.02, 0.08, 0.90]);
+        // Aggressive (Capped at 70% per user sanity check)
+        candidates.push([0.05, 0.25, 0.70]);
+
+        // Loop 6: "Steal the Best"
+        // Add Glide Path allocation as a candidate.
+        // Rule: Equity = 110 - Age. Capped at 70%.
+        const age = currentState.currentYear + currentState.config.retirementAge;
+        const equityPct = Math.max(0, Math.min(0.70, (110 - age) / 100));
+        const safePct = 1 - equityPct;
+        const glideAlloc = [safePct * 0.4, safePct * 0.6, equityPct]; // 40% Cash / 60% Income mix for safe part
+        candidates.push(glideAlloc);
 
         return candidates;
     }
@@ -117,11 +220,8 @@ export class SurvivalOptimizer {
                 turnover += Math.abs(targetAllocation[i] - currentAllocation[i]);
             }
             turnover = turnover / 2; // Total moved
-            // Penalty: 1% of moved funds (covers Tax + Spread)
-            // If dragging from 0% equity to 100% equity, we move 100%. Penalty 1%.
-            // If dragging from 100% equity to 0%, we selling 100%. Tax might be higher (LTCG).
-            // Let's conservatively say 2% friction on turnover.
-            initialPenalty = turnover * 0.02;
+            // Penalty: Increase to 4% (conservative) to discourage churn -> Reduced to 1% (Loop 7)
+            initialPenalty = turnover * 0.01;
         }
 
         for (let i = 0; i < simulations; i++) {
@@ -181,6 +281,8 @@ export class SurvivalOptimizer {
                     } else {
                         isAlive = false;
                         yearsSurvived = year;
+                        yearsSurvived = year;
+                        break;
                     }
                     break;
                 }

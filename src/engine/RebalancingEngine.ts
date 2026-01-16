@@ -155,7 +155,7 @@ export function applyRebalancing(state: GameState): GameState {
         }
 
     } else if (strategy === 'GlidePath') {
-        const startEquity = 0.90;
+        const startEquity = 0.70;
         const endEquity = 0.50;
         const duration = 50;
         const slope = (startEquity - endEquity) / duration;

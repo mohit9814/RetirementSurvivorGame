@@ -124,7 +124,7 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({ gameState }) => {
                         />
                         <Tooltip
                             contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
-                            formatter={(val: number, name: string) => [`₹${val.toFixed(2)} Cr`, STRATEGY_LABELS[name] || name]}
+                            formatter={(val: any, name: any) => [`₹${Number(val).toFixed(2)} Cr`, STRATEGY_LABELS[name] || name]}
                             labelFormatter={(label) => `Year ${label}`}
                         />
                         <Legend />

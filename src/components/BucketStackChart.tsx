@@ -1,6 +1,7 @@
 import React from 'react';
 import { ComposedChart, Area, Scatter, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import type { YearlyResult } from '../types';
+import { formatCurrency } from '../utils/currency';
 
 interface BucketStackChartProps {
     history: YearlyResult[];
@@ -116,27 +117,69 @@ const BucketStackChart: React.FC<BucketStackChartProps> = ({ history, survivalYe
                             }}
                         />
                         <Tooltip
-                            contentStyle={{ background: '#1e293b', border: '1px solid #475569', color: '#f8fafc', fontSize: '0.75rem' }}
-                            formatter={(value: any, name: string, props: any) => {
-                                if (name === 'event') return null;
-                                const num = Number(value);
-                                if (!Number.isFinite(num)) return ['---', name];
+                            content={({ active, payload, label }) => {
+                                if (active && payload && payload.length) {
+                                    const data = payload[0].payload;
+                                    const total = data.realTotal / 10000000;
 
-                                const label = name === 'B1' ? 'Cash (B1)' : name === 'B2' ? 'Income (B2)' : 'Growth (B3)';
+                                    return (
+                                        <div style={{
+                                            background: 'rgba(15, 23, 42, 0.95)',
+                                            border: '1px solid #334155',
+                                            borderRadius: '8px',
+                                            padding: '12px',
+                                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)',
+                                            minWidth: '200px'
+                                        }}>
+                                            {/* Header */}
+                                            <div style={{ borderBottom: '1px solid #334155', paddingBottom: '8px', marginBottom: '8px' }}>
+                                                <div style={{ color: '#f8fafc', fontWeight: 'bold', fontSize: '0.9rem' }}>Year {label}</div>
+                                                <div style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Total Wealth: ₹{total.toFixed(2)} Cr</div>
+                                            </div>
 
-                                if (mode === 'percent') {
-                                    return [`${num.toFixed(1)}%`, label];
+                                            {/* Buckets */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
+                                                {[
+                                                    { name: 'Growth (B3)', val: data.B3, color: '#d946ef' },
+                                                    { name: 'Income (B2)', val: data.B2, color: '#818cf8' },
+                                                    { name: 'Cash (B1)', val: data.B1, color: '#38bdf8' }
+                                                ].map(item => (
+                                                    <div key={item.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: item.color }} />
+                                                            <span style={{ color: '#cbd5e1' }}>{item.name}</span>
+                                                        </div>
+                                                        <span style={{ color: '#f8fafc', fontFamily: 'monospace' }}>
+                                                            {mode === 'percent' ? `${item.val.toFixed(1)}%` : `₹${item.val.toFixed(2)} Cr`}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Rebalancing Moves */}
+                                            {data.moves && data.moves.length > 0 && (
+                                                <div style={{ borderTop: '1px solid #334155', paddingTop: '8px', marginTop: '4px' }}>
+                                                    <div style={{ color: '#fbbf24', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        🧞‍♂️ AI Rebalancing
+                                                    </div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                        {data.moves.map((m: any, idx: number) => {
+                                                            const buckets = ['Cash', 'Income', 'Growth'];
+                                                            const from = buckets[m.fromBucketIndex] || `B${m.fromBucketIndex + 1}`;
+                                                            const to = buckets[m.toBucketIndex] || `B${m.toBucketIndex + 1}`;
+                                                            return (
+                                                                <div key={idx} style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                                                                    • {from} ➝ {to}: {formatCurrency(m.amount)}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
                                 }
-                                return [`₹${num.toFixed(2)} Cr`, label];
-                            }}
-
-                            labelFormatter={(label) => {
-                                const item = data.find(d => d.year === label);
-                                let suffix = '';
-                                if (item && item.moves && item.moves.length > 0) {
-                                    suffix = `\n(🧞‍♂️ ${item.moves.length} Rebalancing Move${item.moves.length > 1 ? 's' : ''})`;
-                                }
-                                return `Year ${label}${suffix}`;
+                                return null;
                             }}
                         />
                         <ReferenceLine x={currentYear} stroke="var(--color-accent)" strokeDasharray="3 3" />
@@ -167,7 +210,7 @@ const BucketStackChart: React.FC<BucketStackChartProps> = ({ history, survivalYe
                         <Scatter
                             dataKey="event"
                             name="Genie Event"
-                            shape={renderEventShape}
+                            shape={renderEventShape as any}
                             legendType="none"
                         />
                     </ComposedChart>
