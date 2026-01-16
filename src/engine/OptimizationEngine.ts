@@ -90,6 +90,7 @@ export class SurvivalOptimizer {
                 // Check Market State
                 const growthReturn = currentState.buckets[2].lastYearReturn;
                 const isCrash = growthReturn < -0.10;
+                const yearsRemaining = currentState.config.survivalYears - currentState.currentYear;
 
                 // --- FLOORS (Safety) ---
                 let hardFloorB1 = currentExpenses * 1.0;
@@ -105,42 +106,49 @@ export class SurvivalOptimizer {
                 const projectedB2 = alloc[1] * totalWealth;
                 const projectedSafe = projectedB1 + projectedB2;
 
-                // B1 Penalties
+                // B1 Penalties (REDUCED - too harsh before)
                 if (projectedB1 < hardFloorB1 * 0.99) {
-                    score -= 1000; // Hard Floor
+                    score -= 200; // Hard Floor (was 1000)
                 } else {
-                    const softTargetB1 = currentExpenses * 2.5;
+                    const softTargetB1 = currentExpenses * 2.0;
                     if (projectedB1 < softTargetB1) {
                         const deficit = (softTargetB1 - projectedB1) / currentExpenses;
-                        score -= deficit * 20; // Soft Floor Gradient
+                        score -= deficit * 5; // Soft Floor Gradient (was 20)
                     }
                 }
 
-                // B2 Penalties
+                // B2 Penalties (REDUCED)
                 if (projectedB2 < hardFloorB2 * 0.99) {
-                    score -= 500; // Hard Floor
+                    score -= 100; // Hard Floor (was 500)
                 } else {
-                    const softTargetB2 = currentExpenses * 4.0;
+                    const softTargetB2 = currentExpenses * 3.0;
                     if (projectedB2 < softTargetB2) {
                         const deficit = (softTargetB2 - projectedB2) / currentExpenses;
-                        score -= deficit * 10; // Soft Floor Gradient
+                        score -= deficit * 3; // Soft Floor Gradient (was 10)
                     }
+                }
+
+                // --- EARLY YEAR EQUITY BONUS ---
+                // When we have 20+ years, we should favor equity-heavy allocations
+                if (yearsRemaining >= 20) {
+                    score += alloc[2] * 30; // Bonus for equity (was just +alloc[2] in tiebreaker)
+                } else if (yearsRemaining >= 10) {
+                    score += alloc[2] * 15;
                 }
 
                 // --- ROOFS (Efficiency) ---
-                // Hard Roof: Total Safe Assets shouldn't exceed 10 years (Opportunity Cost)
-                const hardRoofSafe = currentExpenses * 10.0;
+                // Hard Roof: Total Safe Assets shouldn't exceed 8 years (was 10)
+                const hardRoofSafe = currentExpenses * 8.0;
                 if (projectedSafe > hardRoofSafe) {
                     const excess = (projectedSafe - hardRoofSafe) / currentExpenses;
-                    score -= excess * 50; // Penalty for Hoarding
+                    score -= excess * 30; // Penalty for Hoarding (was 50)
                 }
 
                 // --- RICH MODE (War Chest) ---
-                // If we are in the "Comfort Zone" (Safe > 6 years AND < 10 years)
-                // We reward it. This encourages building the buffer up to the roof.
-                const comfortZoneStart = currentExpenses * 6.0;
+                // If we are in the "Comfort Zone" (Safe > 4 years AND < 8 years)
+                const comfortZoneStart = currentExpenses * 4.0;
                 if (projectedSafe > comfortZoneStart && projectedSafe < hardRoofSafe) {
-                    score += 50;
+                    score += 20; // (was 50)
                 }
             } // End of Sovereign Strategy
 
@@ -161,37 +169,40 @@ export class SurvivalOptimizer {
     /**
      * Generates a grid of feasible allocations.
      * Constraint: Sum = 1.0 (100%)
-     * Simplified 3-Bucket Grid search to avoid combinatorial explosion.
-     * Focuses on shifting between Income(B2) and Growth(B3), keeping Cash(B1) relatively stable or minimal.
+     * Includes conservative to aggressive allocations and GlidePath-aligned candidate.
      */
     private static generateCandidateAllocations(currentState: GameState): number[][] {
         const candidates: number[][] = [];
 
-        // Fixed sets of heuristics for speed
         // [Cash, Income, Growth]
 
-        // Conservative
-        candidates.push([0.10, 0.70, 0.20]);
-        candidates.push([0.10, 0.60, 0.30]);
+        // Aggressive (Start of life - matches typical user config 10/30/60)
+        candidates.push([0.10, 0.30, 0.60]);
+        candidates.push([0.10, 0.25, 0.65]);
+        candidates.push([0.10, 0.20, 0.70]);
 
         // Balanced
-        candidates.push([0.05, 0.55, 0.40]);
-        candidates.push([0.05, 0.45, 0.50]);
-        candidates.push([0.05, 0.35, 0.60]);
+        candidates.push([0.10, 0.40, 0.50]);
+        candidates.push([0.15, 0.35, 0.50]);
+        candidates.push([0.10, 0.50, 0.40]);
 
-        // Aggressive
-        // Aggressive (Capped at 70% per user sanity check)
-        candidates.push([0.05, 0.25, 0.70]);
+        // Conservative (Late life)
+        candidates.push([0.15, 0.55, 0.30]);
+        candidates.push([0.20, 0.50, 0.30]);
+        candidates.push([0.20, 0.60, 0.20]);
 
-        // Loop 6: "Steal the Best"
-        // Add Glide Path allocation as a candidate.
-        // Rule: Equity = 110 - Age. Capped at 70%.
-        // Note: GameConfig doesn't have retirementAge; assume typical retirement at 60.
-        const ASSUMED_RETIREMENT_AGE = 60;
-        const age = currentState.currentYear + ASSUMED_RETIREMENT_AGE;
-        const equityPct = Math.max(0, Math.min(0.70, (110 - age) / 100));
-        const safePct = 1 - equityPct;
-        const glideAlloc = [safePct * 0.4, safePct * 0.6, equityPct]; // 40% Cash / 60% Income mix for safe part
+        // GlidePath-Aligned Candidate:
+        // Matches actual GlidePath strategy: 70% equity at year 0, decreasing by 0.4% per year to 50%
+        const startEquity = 0.70;
+        const endEquity = 0.50;
+        const duration = 50;
+        const slope = (startEquity - endEquity) / duration;
+        let glideEquity = startEquity - (currentState.currentYear * slope);
+        glideEquity = Math.max(endEquity, Math.min(startEquity, glideEquity));
+
+        // Split safe bucket: 25% Cash, 75% Income of the non-equity portion
+        const safePct = 1 - glideEquity;
+        const glideAlloc = [safePct * 0.25, safePct * 0.75, glideEquity];
         candidates.push(glideAlloc);
 
         return candidates;
