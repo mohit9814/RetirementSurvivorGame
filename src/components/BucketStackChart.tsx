@@ -63,7 +63,7 @@ const BucketStackChart: React.FC<BucketStackChartProps> = ({ history, survivalYe
 
     const renderEventShape = (props: any) => {
         const { cx, cy, payload } = props;
-        if (!payload.event) return null;
+        if (!payload.event) return <></>;
         return (
             <text x={cx} y={cy} dy={-10} textAnchor="middle" fill="#fbbf24" fontSize="16">
                 🧞‍♂️

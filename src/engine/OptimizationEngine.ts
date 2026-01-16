@@ -186,7 +186,9 @@ export class SurvivalOptimizer {
         // Loop 6: "Steal the Best"
         // Add Glide Path allocation as a candidate.
         // Rule: Equity = 110 - Age. Capped at 70%.
-        const age = currentState.currentYear + currentState.config.retirementAge;
+        // Note: GameConfig doesn't have retirementAge; assume typical retirement at 60.
+        const ASSUMED_RETIREMENT_AGE = 60;
+        const age = currentState.currentYear + ASSUMED_RETIREMENT_AGE;
         const equityPct = Math.max(0, Math.min(0.70, (110 - age) / 100));
         const safePct = 1 - equityPct;
         const glideAlloc = [safePct * 0.4, safePct * 0.6, equityPct]; // 40% Cash / 60% Income mix for safe part

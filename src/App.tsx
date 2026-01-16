@@ -164,7 +164,7 @@ function App() {
                             }
                             const rows = gameState.history.map(h => {
                               // Serialize logs: safely handle array vs string
-                              let logString = '';
+                              let logString: string = '';
                               if (Array.isArray(h.rebalancingMoves)) {
                                 const buckets = ['Cash', 'Income', 'Growth'];
                                 logString = h.rebalancingMoves.map(m => {
