@@ -31,11 +31,15 @@ const BurnDownChart: React.FC<BurnDownChartProps> = ({ history, survivalYears, c
                             type="number"
                             domain={[0, survivalYears]}
                             stroke="rgba(255,255,255,0.5)"
-                            label={{ value: 'Years', position: 'insideBottomRight', offset: -5, fill: 'white' }}
+                            tick={{ fontSize: 10 }} // Smaller font
+                            tickMargin={10}         // More breathing room
+                            label={{ value: 'Years', position: 'insideBottomRight', offset: -5, fill: 'white', fontSize: 12 }}
                         />
                         <YAxis
                             stroke="rgba(255,255,255,0.5)"
-                            label={{ value: 'Cr', angle: -90, position: 'insideLeft', fill: 'white' }}
+                            tick={{ fontSize: 10 }}
+                            width={40} // Fixed width to prevent overlap
+                            label={{ value: 'Cr', angle: -90, position: 'insideLeft', fill: 'white', fontSize: 12 }}
                         />
                         <Tooltip
                             contentStyle={{ background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)' }}

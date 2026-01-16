@@ -62,10 +62,16 @@ export const StrategyHeader: React.FC<StrategyHeaderProps> = ({ currentStrategy,
                     cursor: disabled ? 'default' : 'pointer',
                     display: 'flex', alignItems: 'center', gap: '4px',
                     fontWeight: 600, color: '#f8fafc',
-                    userSelect: 'none'
+                    userSelect: 'none',
+                    whiteSpace: 'nowrap',
+                    maxWidth: '150px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
                 }}
             >
-                {info.label}
+                {/* On mobile, we might want just "Strategy" or a shorter name. 
+                    For now, enforcing ellipsis and max-width. */}
+                <span className="strategy-label-text">{info.label}</span>
                 {!disabled && <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>▼</span>}
             </div>
 

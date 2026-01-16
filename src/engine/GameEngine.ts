@@ -9,13 +9,13 @@ export const INITIAL_CONFIG: GameConfig = {
     initialCorpus: 50000000, // 5 Crores
     initialExpenses: 1200000, // 12 Lakhs
     inflationRate: 0.07,
-    survivalYears: 30, // Default 30 years
+    survivalYears: 45, // Default 30 years
     enableTaxation: true, // Default Enabled
     rebalancingStrategy: 'None',
     bucketConfigs: [
-        { name: 'Bucket 1 (Cash/Liquid)', type: 'Cash', allocation: 0.1, expectedReturn: 0.04, volatility: 0.01 },
-        { name: 'Bucket 2 (Income)', type: 'Income', allocation: 0.3, expectedReturn: 0.08, volatility: 0.08 },
-        { name: 'Bucket 3 (Equity)', type: 'Growth', allocation: 0.6, expectedReturn: 0.12, volatility: 0.15 },
+        { name: 'Bucket 1 (Cash/Liquid)', type: 'Cash', allocation: 0.10, expectedReturn: 0.05, volatility: 0.06 },
+        { name: 'Bucket 2 (Income)', type: 'Income', allocation: 0.25, expectedReturn: 0.092, volatility: 0.078 },
+        { name: 'Bucket 3 (Equity)', type: 'Growth', allocation: 0.65, expectedReturn: 0.136, volatility: 0.161 },
     ]
 };
 

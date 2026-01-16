@@ -12,12 +12,12 @@ This report analyzes the performance of the 5 key rebalancing strategies availab
 
 | Strategy | Survival Rate | Median Ending Wealth | Worst Case (Min Wealth) | Avg Duration |
 | :--- | :--- | :--- | :--- | :--- |
-| **None (Buy & Hold)** | **100.0%** | **₹61.38 Cr** | ₹0.65 Cr | 40.0 Years |
-| **Refill Bucket 1** | 95.0% | ₹53.68 Cr | ₹0.00 Cr | 40.0 Years |
-| **AI Max Survival** | 95.0% | ₹47.79 Cr | ₹0.00 Cr | 40.0 Years |
-| **Glide Path** | 95.0% | ₹46.78 Cr | ₹0.00 Cr | 40.0 Years |
-| **Fixed Allocation** | 95.0% | ₹31.32 Cr | ₹0.00 Cr | 40.0 Years |
-| **Tactical Flex** | 90.0% | ₹22.03 Cr | ₹0.00 Cr | 39.8 Years |
+| **Glide Path** | **98.0%** | ₹110.47 Cr | ₹0.00 Cr | 44.4 Years |
+| **Fixed Allocation** | **98.0%** | ₹91.07 Cr | ₹0.00 Cr | 44.4 Years |
+| **Tactical Flex** | 97.0% | ₹73.47 Cr | ₹0.00 Cr | 44.3 Years |
+| **None (Buy & Hold)** | 94.0% | **₹202.72 Cr** | ₹0.00 Cr | 44.5 Years |
+| **AI Max Survival** | 93.0% | ₹179.01 Cr | ₹0.00 Cr | 44.2 Years |
+| **Refill Bucket 1** | 92.0% | ₹180.83 Cr | ₹0.00 Cr | 44.3 Years |
 
 ### Insights:
 1.  **The "Do Nothing" Anomaly**: The *None* strategy won this specific benchmark batch. This is a common phenomenon in finance known as the "Rebalancing Bonus/Penalty". In a strong uptrending market (like the default 12% equity return assumption), constantly selling winners (Equity) to buy losers (Cash/Income) *reduces* total return. Additionally, every rebalance incurs a Tax/Friction cost (modeled at ~2% of turnover), which *None* avoids entirely.

@@ -17,9 +17,9 @@ const BASE_CONFIG: GameConfig = {
     survivalYears: 40,       // Max Horizon
     rebalancingStrategy: 'Tactical',
     bucketConfigs: [
-        { name: 'Bucket 1', type: 'Cash', allocation: 0, expectedReturn: 0.045, volatility: 0.01 },  // 4.5%, 1%
-        { name: 'Bucket 2', type: 'Income', allocation: 0, expectedReturn: 0.09, volatility: 0.08 }, // 9%, 8%
-        { name: 'Bucket 3', type: 'Growth', allocation: 0, expectedReturn: 0.12, volatility: 0.13 }, // 12%, 13%
+        { name: 'Bucket 1', type: 'Cash', allocation: 0, expectedReturn: 0.05, volatility: 0.06 },  // 5%, 6%
+        { name: 'Bucket 2', type: 'Income', allocation: 0, expectedReturn: 0.092, volatility: 0.078 }, // 9.2%, 7.8%
+        { name: 'Bucket 3', type: 'Growth', allocation: 0, expectedReturn: 0.136, volatility: 0.161 }, // 13.6%, 16.1%
     ]
 };
 

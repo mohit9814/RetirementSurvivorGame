@@ -231,47 +231,46 @@ h4 {
 /* Mobile-First Optimizations - Fit everything in viewport */
 @media (max-width: 768px) {
   :root {
-    --space-xs: 0.1rem;
-    --space-sm: 0.2rem;
-    --space-md: 0.4rem;
-    --space-lg: 0.6rem;
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 0.75rem;
+    --space-lg: 1rem;
   }
 
   body {
-    overflow: hidden !important;
+    overflow-y: auto !important;
+    /* Allow scrolling if needed */
   }
 
   #root {
-    height: 100vh !important;
-    height: 100dvh !important;
-    overflow: hidden !important;
+    height: auto !important;
+    min-height: 100vh;
+    overflow-y: auto !important;
   }
 
   .dashboard-container {
     display: flex !important;
     flex-direction: column !important;
-    height: 100vh !important;
-    height: 100dvh !important;
-    overflow: hidden !important;
-    padding: 4px !important;
-    gap: 4px !important;
+    height: auto !important;
+    min-height: 100vh;
+    overflow-y: auto !important;
+    padding: var(--space-sm) !important;
+    gap: var(--space-sm) !important;
   }
 
-  /* Header - Ultra compact */
+  /* Header - Auto height, flexible */
   .dashboard-header {
-    height: 32px !important;
-    min-height: 32px !important;
-    max-height: 32px !important;
-    padding: 0 4px !important;
+    height: auto !important;
+    min-height: 50px !important;
+    max-height: none !important;
+    padding: var(--space-xs) 0 !important;
     flex-shrink: 0 !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
   }
 
   .dashboard-header h1 {
-    font-size: 0.75rem !important;
-  }
-
-  .dashboard-header h1 span {
-    display: none !important;
+    font-size: 1rem !important;
   }
 
   /* Hide leaderboard and export buttons on mobile */
@@ -280,54 +279,25 @@ h4 {
     display: none !important;
   }
 
-  /* Controls Section - Horizontal bar at top */
-  .dashboard-controls {
-    order: -1 !important;
-    height: auto !important;
-    min-height: unset !important;
-    max-height: 50px !important;
-    flex-shrink: 0 !important;
-    display: flex !important;
-    flex-direction: row !important;
-    gap: 4px !important;
-    padding: 0 !important;
-  }
-
-  /* Hide Mission Log completely */
-  .dashboard-controls>div:last-child {
-    display: none !important;
-  }
-
-  /* Control Panel - take minimal space */
-  .dashboard-controls>.glass-panel:first-child {
-    padding: 6px !important;
-    flex: 1 !important;
-    min-height: unset !important;
-  }
-
-  /* Buckets Section - Horizontal strip */
+  /* Buckets Section - Stack vertically or small grid */
   .dashboard-buckets {
     height: auto !important;
-    min-height: 80px !important;
-    max-height: 100px !important;
+    min-height: unset !important;
+    max-height: none !important;
     flex-shrink: 0 !important;
     display: flex !important;
     flex-direction: row !important;
-    flex-wrap: nowrap !important;
-    gap: 3px !important;
-    overflow: hidden !important;
+    flex-wrap: wrap !important;
+    gap: var(--space-sm) !important;
+    overflow: visible !important;
   }
 
-  /* FORCE bucket card sizing */
+  /* buckets take full width on very small, or 33% on standard mobile */
   .dashboard-buckets>div,
   .dashboard-buckets>.glass-panel {
-    min-width: 0 !important;
-    width: 33.33% !important;
-    max-width: 33.33% !important;
-    flex: 1 1 33.33% !important;
-    padding: 4px !important;
-    gap: 2px !important;
-    overflow: hidden !important;
+    min-width: 30% !important;
+    flex: 1 1 30% !important;
+    padding: var(--space-sm) !important;
   }
 
   /* Hide bucket sub-elements */
@@ -337,86 +307,101 @@ h4 {
   }
 
   .dashboard-buckets h3 {
-    font-size: 0.55rem !important;
+    font-size: 0.7rem !important;
   }
 
   .dashboard-buckets .hero-text {
-    font-size: 0.7rem !important;
-    line-height: 1 !important;
+    font-size: 1.1rem !important;
   }
 
-  /* Chart Section - Take ALL remaining space */
+  /* Chart Section */
   .dashboard-chart {
-    flex: 1 1 auto !important;
-    min-height: 120px !important;
+    flex: 0 0 300px !important;
+    /* Fixed height for chart */
+    min-height: 300px !important;
     overflow: hidden !important;
+    order: 0 !important;
+    /* Keep natural order */
   }
 
   .dashboard-chart .glass-panel {
     height: 100% !important;
-    padding: 4px !important;
+    padding: var(--space-sm) !important;
   }
 
   .dashboard-chart h3 {
-    font-size: 0.6rem !important;
-    margin: 0 0 2px 0 !important;
+    font-size: 0.8rem !important;
+    margin: 0 0 var(--space-xs) 0 !important;
   }
 
   /* Hide chart mode buttons partially */
   .dashboard-chart>div:first-child {
-    gap: 1px !important;
+    gap: var(--space-xs) !important;
     padding: 0 !important;
-    margin-bottom: 2px !important;
+    margin-bottom: var(--space-xs) !important;
   }
 
   .dashboard-chart>div:first-child .btn {
-    padding: 2px 4px !important;
-    font-size: 0.55rem !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  /* Controls Section */
+  .dashboard-controls {
+    order: 0 !important;
+    /* Keep natural order (bottom) */
+    height: auto !important;
+    min-height: unset !important;
+    max-height: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--space-sm) !important;
+  }
+
+  /* Show Mission Log again, but maybe smaller */
+  .dashboard-controls>div:last-child {
+    display: flex !important;
+    height: 250px !important;
+  }
+
+  /* Control Panel - take minimal space */
+  .dashboard-controls>.glass-panel:first-child {
+    padding: var(--space-sm) !important;
+    flex: 1 !important;
+    min-height: unset !important;
   }
 
   /* General button compaction */
   .btn {
-    padding: 4px 8px !important;
-    font-size: 0.7rem !important;
-    border-radius: 4px !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.8rem !important;
+    border-radius: var(--radius-md) !important;
   }
 
   .glass-panel {
-    border-radius: 6px !important;
+    border-radius: var(--radius-md) !important;
   }
 
   .hero-text {
-    font-size: 0.9rem !important;
+    font-size: 1.2rem !important;
   }
 
   .compact-h {
-    font-size: 0.5rem !important;
-    margin-bottom: 2px !important;
+    font-size: 0.7rem !important;
+    margin-bottom: var(--space-xs) !important;
   }
 }
 
-/* Extra small screens - Ultra compact */
+/* Extra small screens */
 @media (max-width: 400px) {
-  .dashboard-container {
-    padding: 2px !important;
-    gap: 2px !important;
-  }
-
-  .dashboard-header {
-    height: 28px !important;
-  }
-
   .dashboard-buckets {
-    max-height: 80px !important;
+    flex-direction: column !important;
   }
 
   .dashboard-buckets>div,
   .dashboard-buckets>.glass-panel {
-    padding: 2px !important;
-  }
-
-  .dashboard-buckets .hero-text {
-    font-size: 0.6rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
 
