@@ -155,13 +155,27 @@ export function applyRebalancing(state: GameState): GameState {
         }
 
     } else if (strategy === 'GlidePath') {
-        const startEquity = 0.70;
-        const endEquity = 0.50;
-        const duration = 50;
-        const slope = (startEquity - endEquity) / duration;
+        // Glide Path based on YEARS REMAINING (not age)
+        // When yearsRemaining >= 25: 70% equity (aggressive)
+        // When yearsRemaining <= 5: 50% equity (conservative)
+        // Linear interpolation in between
+        const yearsRemaining = state.config.survivalYears - state.currentYear;
+        const maxEquity = 0.70;
+        const minEquity = 0.50;
+        const aggressiveThreshold = 25; // Years where we're most aggressive
+        const conservativeThreshold = 5; // Years where we're most conservative
 
-        let targetEquity = startEquity - (state.currentYear * slope);
-        if (targetEquity < endEquity) targetEquity = endEquity;
+        let targetEquity: number;
+        if (yearsRemaining >= aggressiveThreshold) {
+            targetEquity = maxEquity;
+        } else if (yearsRemaining <= conservativeThreshold) {
+            targetEquity = minEquity;
+        } else {
+            // Linear interpolation
+            const range = aggressiveThreshold - conservativeThreshold;
+            const position = yearsRemaining - conservativeThreshold;
+            targetEquity = minEquity + (maxEquity - minEquity) * (position / range);
+        }
 
         // Use totalWealth from line 10
         const targetB3Amount = totalWealth * targetEquity;

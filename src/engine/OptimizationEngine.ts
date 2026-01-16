@@ -192,13 +192,24 @@ export class SurvivalOptimizer {
         candidates.push([0.20, 0.60, 0.20]);
 
         // GlidePath-Aligned Candidate:
-        // Matches actual GlidePath strategy: 70% equity at year 0, decreasing by 0.4% per year to 50%
-        const startEquity = 0.70;
-        const endEquity = 0.50;
-        const duration = 50;
-        const slope = (startEquity - endEquity) / duration;
-        let glideEquity = startEquity - (currentState.currentYear * slope);
-        glideEquity = Math.max(endEquity, Math.min(startEquity, glideEquity));
+        // Uses YEARS REMAINING (matches actual GlidePath strategy)
+        // yearsRemaining >= 25: 70% equity, yearsRemaining <= 5: 50% equity
+        const yearsRemaining = currentState.config.survivalYears - currentState.currentYear;
+        const maxEquity = 0.70;
+        const minEquity = 0.50;
+        const aggressiveThreshold = 25;
+        const conservativeThreshold = 5;
+
+        let glideEquity: number;
+        if (yearsRemaining >= aggressiveThreshold) {
+            glideEquity = maxEquity;
+        } else if (yearsRemaining <= conservativeThreshold) {
+            glideEquity = minEquity;
+        } else {
+            const range = aggressiveThreshold - conservativeThreshold;
+            const position = yearsRemaining - conservativeThreshold;
+            glideEquity = minEquity + (maxEquity - minEquity) * (position / range);
+        }
 
         // Split safe bucket: 25% Cash, 75% Income of the non-equity portion
         const safePct = 1 - glideEquity;
