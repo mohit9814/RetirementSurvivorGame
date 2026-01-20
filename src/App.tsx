@@ -165,7 +165,7 @@ function App() {
                 latestMoves={gameState.history[gameState.history.length - 1]?.rebalancingMoves}
                 year={gameState.currentYear}
                 speed={speed}
-                showInterventions={false}
+                showInterventions={gameState.config.showInterventionPopups}
               />
 
               <header className="dashboard-header" style={{

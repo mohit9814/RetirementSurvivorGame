@@ -213,9 +213,36 @@ export function applyRebalancing(state: GameState): GameState {
         }
 
     } else if (strategy === 'FixedAllocation') {
-        state.config.bucketConfigs.forEach((conf, i) => {
-            const target = totalWealth * conf.allocation;
-            newBuckets[i].balance = target;
+
+        const surpluses: { idx: number, amount: number }[] = [];
+        const deficits: { idx: number, amount: number }[] = [];
+
+        // 1. Calculate Deviations
+        newBuckets.forEach((b, i) => {
+            const target = totalWealth * state.config.bucketConfigs[i].allocation;
+            const diff = b.balance - target;
+            if (diff > 10) surpluses.push({ idx: i, amount: diff });
+            else if (diff < -10) deficits.push({ idx: i, amount: -diff });
+        });
+
+        // 2. Move funds: Surplus -> Deficit
+        surpluses.forEach(source => {
+            while (source.amount > 1 && deficits.length > 0) {
+                const dest = deficits[0];
+                const moveAmount = Math.min(source.amount, dest.amount);
+
+                // Execute Move
+                newBuckets[source.idx].balance -= moveAmount;
+                newBuckets[dest.idx].balance += moveAmount;
+
+                source.amount -= moveAmount;
+                dest.amount -= moveAmount;
+
+                logMove(source.idx, dest.idx, moveAmount, 'Allocation Reset');
+
+                // If deficit filled, remove from list
+                if (dest.amount < 1) deficits.shift();
+            }
         });
     } else if (strategy === 'AI_Max_Survival') {
         // AI Optimization Logic
@@ -278,6 +305,6 @@ export function applyRebalancing(state: GameState): GameState {
     return {
         ...state,
         buckets: newBuckets,
-        history: [...state.history.slice(0, -1), { ...state.history[state.history.length - 1], rebalancingMoves: moves }]
+        history: newHistory
     };
 }

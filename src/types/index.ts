@@ -26,6 +26,7 @@ export interface YearlyResult {
     marketEvent?: string; // e.g., "Crash", "Boom"
     rebalancingMoves?: RebalancingEvent[];
     spendingCutApplied?: boolean; // True if inflation adjustment was skipped due to poor returns
+    strategyChange?: string; // Log of strategy switches
 }
 
 export interface RebalancingEvent {

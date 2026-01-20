@@ -12,6 +12,7 @@ export const INITIAL_CONFIG: GameConfig = {
     survivalYears: 45, // Default 30 years
     enableTaxation: true, // Default Enabled
     rebalancingStrategy: 'None',
+    showInterventionPopups: false,
     bucketConfigs: [
         { name: 'Bucket 1 (Cash/Liquid)', type: 'Cash', allocation: 0.10, expectedReturn: 0.05, volatility: 0.06 },
         { name: 'Bucket 2 (Income)', type: 'Income', allocation: 0.25, expectedReturn: 0.092, volatility: 0.078 },

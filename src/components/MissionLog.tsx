@@ -66,26 +66,47 @@ const MissionLog: React.FC<MissionLogProps> = ({ history }) => {
                         }
                         {[...history].reverse().map((h) => {
                             // Parse Rebalancing Log
-                            let rebalancingNodes = <span style={{ opacity: 0.3 }}>-</span>;
-                            if (h.rebalancingMoves && Array.isArray(h.rebalancingMoves) && h.rebalancingMoves.length > 0) {
+                            // Parse Rebalancing Log
+                            let rebalancingNodes: React.ReactNode = null;
+                            const hasMoves = h.rebalancingMoves && Array.isArray(h.rebalancingMoves) && h.rebalancingMoves.length > 0;
+                            const hasStrategyChange = !!h.strategyChange;
+
+                            if (!hasMoves && !hasStrategyChange) {
+                                rebalancingNodes = <span style={{ opacity: 0.3 }}>-</span>;
+                            } else {
                                 rebalancingNodes = (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                        <div style={{ fontSize: '0.7rem', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px', fontWeight: 700 }}>
-                                            ⚡ Auto-Rebalancing
-                                        </div>
-                                        {h.rebalancingMoves.map((m, idx) => (
-                                            <div key={idx} style={{ fontSize: '0.8rem', paddingLeft: '8px', borderLeft: '2px solid rgba(251, 191, 36, 0.3)' }}>
-                                                <span style={{ color: '#fbbf24', fontWeight: 500 }}>{m.reason}</span>:
-                                                <span style={{ color: '#fff', marginLeft: '4px' }}>{formatCurrency(m.amount)}</span>
-                                                <span style={{ color: '#94a3b8', marginLeft: '4px', fontSize: '0.75rem' }}>
-                                                    (B{m.fromBucketIndex + 1} ➝ B{m.toBucketIndex + 1})
-                                                </span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        {/* Strategy Change Log */}
+                                        {hasStrategyChange && (
+                                            <div style={{ fontSize: '0.75rem', color: '#c084fc', borderLeft: '2px solid #c084fc', paddingLeft: '8px', marginBottom: '4px' }}>
+                                                {h.strategyChange}
                                             </div>
-                                        ))}
+                                        )}
+
+                                        {/* Auto-Rebalancing Moves */}
+                                        {hasMoves && (
+                                            <>
+                                                <div style={{ fontSize: '0.7rem', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px', fontWeight: 700 }}>
+                                                    ⚡ Auto-Rebalancing
+                                                </div>
+                                                {(h.rebalancingMoves as any[]).map((m, idx) => (
+                                                    <div key={idx} style={{ fontSize: '0.8rem', paddingLeft: '8px', borderLeft: '2px solid rgba(251, 191, 36, 0.3)' }}>
+                                                        <span style={{ color: '#fbbf24', fontWeight: 500 }}>{m.reason}</span>:
+                                                        <span style={{ color: '#fff', marginLeft: '4px' }}>{formatCurrency(m.amount)}</span>
+                                                        <span style={{ color: '#94a3b8', marginLeft: '4px', fontSize: '0.75rem' }}>
+                                                            (B{m.fromBucketIndex + 1} ➝ B{m.toBucketIndex + 1})
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        )}
+
+                                        {/* Legacy String Support */}
+                                        {!hasMoves && !hasStrategyChange && typeof h.rebalancingMoves === 'string' && (
+                                            <span style={{ fontSize: '0.8rem' }}>{h.rebalancingMoves}</span>
+                                        )}
                                     </div>
                                 );
-                            } else if (typeof h.rebalancingMoves === 'string') {
-                                rebalancingNodes = <span style={{ fontSize: '0.8rem' }}>{h.rebalancingMoves}</span>;
                             }
 
                             return (

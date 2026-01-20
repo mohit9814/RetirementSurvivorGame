@@ -1,12 +1,16 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { GameState, GameConfig } from '../types';
 import { initializeGame, advanceYear, transferFunds, INITIAL_CONFIG } from '../engine/GameEngine';
-import { saveConfig } from '../utils/storage';
+import { saveConfig, loadConfig } from '../utils/storage';
 
 console.log("DEBUG: useGame.ts evaluating");
 
 export function useGame() {
-    const [gameState, setGameState] = useState<GameState>(() => initializeGame(INITIAL_CONFIG));
+    const [gameState, setGameState] = useState<GameState>(() => {
+        const savedConfig = loadConfig();
+        const config = savedConfig ? { ...INITIAL_CONFIG, ...savedConfig } : INITIAL_CONFIG;
+        return initializeGame(config);
+    });
     const [isPlaying, setIsPlaying] = useState(false);
     const [playbackSpeed, setPlaybackSpeed] = useState(1000); // ms per year
 
@@ -24,6 +28,20 @@ export function useGame() {
 
     const updateConfig = useCallback((newConfig: GameConfig) => {
         setGameState(prev => {
+            // Check for Strategy Change to Log
+            let newHistory = prev.history;
+            if (prev.config.rebalancingStrategy !== newConfig.rebalancingStrategy && prev.history.length > 0) {
+                newHistory = [...prev.history];
+                const lastIdx = newHistory.length - 1;
+                const changeMsg = `Switched: ${prev.config.rebalancingStrategy} ➝ ${newConfig.rebalancingStrategy}`;
+                const existingLog = newHistory[lastIdx].strategyChange;
+
+                newHistory[lastIdx] = {
+                    ...newHistory[lastIdx],
+                    strategyChange: existingLog ? `${existingLog} | ${changeMsg}` : changeMsg
+                };
+            }
+
             // Check if we are extending the mission to clear 'Victory' state
             const isExtending = prev.isGameOver &&
                 prev.gameOverReason?.startsWith('Victory') &&
@@ -31,6 +49,7 @@ export function useGame() {
 
             return {
                 ...prev,
+                history: newHistory,
                 config: newConfig,
                 isGameOver: isExtending ? false : prev.isGameOver,
                 gameOverReason: isExtending ? undefined : prev.gameOverReason
