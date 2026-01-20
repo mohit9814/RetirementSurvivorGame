@@ -59,10 +59,10 @@ const GenieNotification: React.FC<GenieNotificationProps> = ({ latestMoves, year
                                             <span>Bucket {move.fromBucketIndex + 1}</span>
                                             <span className="material-symbols-outlined text-[10px] text-slate-500">arrow_forward</span>
                                             <span>Bucket {move.toBucketIndex + 1}</span>
-                                            {move.taxIncurred > 0 && (
+                                            {(move.taxIncurred ?? 0) > 0 && (
                                                 <span className="ml-auto text-red-400 flex items-center gap-1">
                                                     <span className="material-symbols-outlined text-[10px]">receipt_long</span>
-                                                    -{formatCurrency(move.taxIncurred)} Tax
+                                                    -{formatCurrency(move.taxIncurred ?? 0)} Tax
                                                 </span>
                                             )}
                                         </div>
@@ -130,7 +130,7 @@ const GenieNotification: React.FC<GenieNotificationProps> = ({ latestMoves, year
                         <WizardBubble move={move} />
 
                         {/* Tax Animation Particle */}
-                        {move.taxIncurred > 0 && (
+                        {(move.taxIncurred ?? 0) > 0 && (
                             <div style={{
                                 position: 'absolute',
                                 left: '50%', top: '50%',
@@ -146,7 +146,7 @@ const GenieNotification: React.FC<GenieNotificationProps> = ({ latestMoves, year
                                     display: 'flex', alignItems: 'center', gap: '4px',
                                     boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
                                 }}>
-                                    💸 -{formatCurrency(move.taxIncurred)}
+                                    💸 -{formatCurrency(move.taxIncurred ?? 0)}
                                 </div>
                             </div>
                         )}
@@ -189,9 +189,9 @@ const WizardBubble = ({ move }: { move: RebalancingEvent }) => (
         <div style={{ color: '#fff', fontWeight: 500 }}>
             {formatCurrency(move.amount)}
         </div>
-        {move.taxIncurred > 0 && (
+        {(move.taxIncurred ?? 0) > 0 && (
             <div style={{ color: '#f87171', fontSize: '0.7rem', marginTop: '2px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '2px' }}>
-                Tax: {formatCurrency(move.taxIncurred)}
+                Tax: {formatCurrency(move.taxIncurred ?? 0)}
             </div>
         )}
     </div>
