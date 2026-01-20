@@ -13,6 +13,8 @@ import Leaderboard from './components/Leaderboard';
 import GenieNotification from './components/GenieNotification';
 import ComparisonChart from './components/ComparisonChart';
 import { StrategyHeader } from './components/StrategyHeader';
+import MissionLog from './components/MissionLog';
+import StrategyIntel from './components/StrategyIntel';
 import { saveGameResult, calculateScore } from './utils/storage';
 import { formatCurrency } from './utils/currency';
 import type { GameConfig, LeaderboardEntry } from './types';
@@ -33,6 +35,7 @@ function App() {
 
   // Chart Mode State
   const [chartMode, setChartMode] = useState<'wealth' | 'buckets' | 'allocation' | 'comparison'>('wealth');
+  const [viewMode, setViewMode] = useState<'visuals' | 'data' | 'intel'>('visuals');
 
   // Use the game hook
   const { gameState, nextYear, transfer, restartGame, updateConfig, playback } = useGame();
@@ -275,134 +278,146 @@ function App() {
                       ))}
                     </section>
 
-                    {/* Chart Section */}
-                    {/* Chart Section */}
-                    <section className="dashboard-chart" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '300px', gap: '0.5rem' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', padding: '0 0.5rem' }}>
-                        <button
-                          className="btn"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'wealth' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'wealth' ? 1 : 0.7 }}
-                          onClick={() => setChartMode('wealth')}
-                        >
-                          Wealth
-                        </button>
-                        <button
-                          className="btn"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'buckets' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'buckets' ? 1 : 0.7 }}
-                          onClick={() => setChartMode('buckets')}
-                        >
-                          Buckets
-                        </button>
-                        <button
-                          className="btn"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'allocation' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'allocation' ? 1 : 0.7 }}
-                          onClick={() => setChartMode('allocation')}
-                        >
-                          Alloc %
-                        </button>
-                        <button
-                          className="btn"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'comparison' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'comparison' ? 1 : 0.7 }}
-                          onClick={() => setChartMode('comparison')}
-                        >
-                          GOD Mode
-                        </button>
+                    {/* Compact Controls Bar */}
+                    <section style={{ gridArea: 'controls', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      {/* Playback Controls */}
+                      <div style={{ flex: '0 0 auto' }}>
+                        <ControlPanel
+                          gameState={gameState}
+                          onNextYear={handleNextYear}
+                          onRestart={() => {
+                            restartGame();
+                            setShowLeaderboard(true);
+                          }}
+                          onExtend={() => {
+                            updateConfig({
+                              ...gameState.config,
+                              survivalYears: gameState.config.survivalYears + 10
+                            });
+                          }}
+                          playback={playback}
+                        />
                       </div>
 
-                      {chartMode === 'wealth' ? (
-                        <BurnDownChart
-                          history={gameState.history}
-                          survivalYears={gameState.config.survivalYears}
-                          currentYear={gameState.currentYear}
-                        />
-                      ) : chartMode === 'comparison' ? (
-                        <ComparisonChart gameState={gameState} />
-                      ) : (
-                        <BucketStackChart
-                          history={gameState.history}
-                          survivalYears={gameState.config.survivalYears}
-                          currentYear={gameState.currentYear}
-                          mode={chartMode === 'allocation' ? 'percent' : 'absolute'}
-                        />
-                      )}
-                    </section>
-
-                    {/* Controls & Log Section */}
-                    <section className="dashboard-controls" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      <ControlPanel
-                        gameState={gameState}
-                        onNextYear={handleNextYear}
-                        onRestart={() => {
-                          restartGame();
-                          setShowLeaderboard(true); // Show leaderboard on restart
-                        }}
-                        onExtend={() => {
-                          updateConfig({
-                            ...gameState.config,
-                            survivalYears: gameState.config.survivalYears + 10
-                          });
-                        }}
-                        playback={playback}
-                      />
-
-                      {/* Detailed Data Table */}
-                      <div className="glass-panel" style={{ flex: 1, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: '200px' }}>
-                        <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                          <h4 className="compact-h" style={{ margin: 0 }}>Mission Log</h4>
-                        </div>
-                        <div style={{ overflow: 'auto', flex: 1 }}>
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
-                            <thead style={{ position: 'sticky', top: 0, background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(4px)', zIndex: 10 }}>
-                              <tr>
-                                <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>Year</th>
-                                <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>B1 %</th>
-                                <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>B2 %</th>
-                                <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>B3 %</th>
-                                <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>Tax</th>
-                                <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>Inflation</th>
-                                <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>Drawdown</th>
-                                <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>Wealth</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {gameState.history.length === 1 &&
-                                <tr><td colSpan={8} style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-secondary)' }}>Simulation Initialized.</td></tr>
-                              }
-                              {[...gameState.history].reverse().map((h) => (
-                                <tr key={h.year} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: h.marketEvent ? 'rgba(234, 179, 8, 0.05)' : 'transparent' }}>
-                                  <td style={{ padding: '0.5rem', fontWeight: 600 }}>{h.year}</td>
-                                  {/* Bucket Returns */}
-                                  {[0, 1, 2].map(i => {
-                                    const ret = h.buckets[i].lastYearReturn;
-                                    return (
-                                      <td key={i} style={{ padding: '0.5rem', color: ret >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                                        {ret !== 0 ? `${(ret * 100).toFixed(1)}%` : '-'}
-                                      </td>
-                                    );
-                                  })}
-                                  <td style={{ padding: '0.5rem', color: '#fb923c' }}>
-                                    {h.taxPaid > 0 ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2, notation: 'compact' }).format(h.taxPaid) : '-'}
-                                  </td>
-                                  <td style={{ padding: '0.5rem', fontSize: '0.75rem' }}>
-                                    {h.spendingCutApplied ? (
-                                      <span style={{ color: 'var(--color-warning)', border: '1px solid var(--color-warning)', padding: '1px 4px', borderRadius: '4px' }}>SKIPPED</span>
-                                    ) : (
-                                      <span style={{ opacity: 0.5 }}>Standard</span>
-                                    )}
-                                  </td>
-                                  <td style={{ padding: '0.5rem' }}>
-                                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2, notation: 'compact' }).format(h.withdrawn)}
-                                  </td>
-                                  <td style={{ padding: '0.5rem', fontWeight: 600 }}>
-                                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2, notation: 'compact' }).format(h.totalWealth)}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                      {/* Middle Tab Switcher - Refactored for aesthetics */}
+                      <div style={{ flex: 1, display: 'flex', gap: '0.75rem', alignItems: 'center', height: '100%', paddingLeft: '1rem' }}>
+                        <button
+                          className={`btn ${viewMode === 'visuals' ? 'btn-primary' : ''}`}
+                          style={{
+                            flex: 1,
+                            padding: '0.75rem',
+                            fontSize: '1rem', // Bigger text
+                            fontWeight: 600,
+                            borderRadius: '8px',
+                            background: viewMode === 'visuals' ? undefined : 'rgba(255,255,255,0.05)',
+                            border: '1px solid var(--glass-border)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                          }}
+                          onClick={() => setViewMode('visuals')}
+                        >
+                          <span>📊</span> Visuals
+                        </button>
+                        <button
+                          className={`btn ${viewMode === 'data' ? 'btn-primary' : ''}`}
+                          style={{
+                            flex: 1,
+                            padding: '0.75rem',
+                            fontSize: '1rem', // Bigger text
+                            fontWeight: 600,
+                            borderRadius: '8px',
+                            background: viewMode === 'data' ? undefined : 'rgba(255,255,255,0.05)',
+                            border: '1px solid var(--glass-border)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                          }}
+                          onClick={() => setViewMode('data')}
+                        >
+                          <span>📋</span> Mission Log
+                        </button>
+                        <button
+                          className={`btn ${viewMode === 'intel' ? 'btn-primary' : ''}`}
+                          style={{
+                            flex: 1,
+                            padding: '0.75rem',
+                            fontSize: '1rem', // Bigger text
+                            fontWeight: 600,
+                            borderRadius: '8px',
+                            background: viewMode === 'intel' ? undefined : 'rgba(255,255,255,0.05)',
+                            border: '1px solid var(--glass-border)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                          }}
+                          onClick={() => setViewMode('intel')}
+                        >
+                          <span>🧠</span> Strategy Intel
+                        </button>
                       </div>
                     </section>
+
+                    {/* Main Content Area */}
+                    <div style={{ gridArea: 'main', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100%', gap: '0.5rem' }}>
+
+                      {/* CONTENT AREA */}
+                      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+                        {viewMode === 'visuals' && (
+                          <section className="dashboard-chart" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '300px', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', padding: '0 0.5rem' }}>
+                              <button
+                                className="btn"
+                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'wealth' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'wealth' ? 1 : 0.7 }}
+                                onClick={() => setChartMode('wealth')}
+                              >
+                                Wealth
+                              </button>
+                              <button
+                                className="btn"
+                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'buckets' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'buckets' ? 1 : 0.7 }}
+                                onClick={() => setChartMode('buckets')}
+                              >
+                                Buckets
+                              </button>
+                              <button
+                                className="btn"
+                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'allocation' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'allocation' ? 1 : 0.7 }}
+                                onClick={() => setChartMode('allocation')}
+                              >
+                                Alloc %
+                              </button>
+                              <button
+                                className="btn"
+                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'comparison' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'comparison' ? 1 : 0.7 }}
+                                onClick={() => setChartMode('comparison')}
+                              >
+                                GOD Mode
+                              </button>
+                            </div>
+
+                            {chartMode === 'wealth' ? (
+                              <BurnDownChart
+                                history={gameState.history}
+                                survivalYears={gameState.config.survivalYears}
+                                currentYear={gameState.currentYear}
+                              />
+                            ) : chartMode === 'comparison' ? (
+                              <ComparisonChart gameState={gameState} />
+                            ) : (
+                              <BucketStackChart
+                                history={gameState.history}
+                                survivalYears={gameState.config.survivalYears}
+                                currentYear={gameState.currentYear}
+                                mode={chartMode === 'allocation' ? 'percent' : 'absolute'}
+                              />
+                            )}
+                          </section>
+                        )}
+
+                        {viewMode === 'data' && (
+                          <MissionLog history={gameState.history} />
+                        )}
+
+                        {viewMode === 'intel' && (
+                          <StrategyIntel />
+                        )}
+                      </div>
+                    </div>
                   </>
                 )
               }

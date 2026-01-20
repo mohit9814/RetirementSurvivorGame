@@ -29,6 +29,23 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart }) => {
                     Can you manage your portfolio to survive 30 years of inflation and market crashes?
                 </p>
 
+                {/* Challenge Banner */}
+                <div style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', borderRadius: '8px', padding: '1rem', marginBottom: '2rem', textAlign: 'left' }}>
+                    <h3 style={{ margin: '0 0 0.5rem 0', color: '#facc15', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>🏆</span> Beat The Machine
+                    </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.85rem' }}>
+                        <div>
+                            <div style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Target Success Rate</div>
+                            <div style={{ color: '#fff', fontWeight: 'bold' }}>98.5% <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(Glide Path)</span></div>
+                        </div>
+                        <div>
+                            <div style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Target Wealth</div>
+                            <div style={{ color: '#fff', fontWeight: 'bold' }}>₹5.8 Cr <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(Tactical)</span></div>
+                        </div>
+                    </div>
+                </div>
+
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div style={{ textAlign: 'left' }}>
                         <label className="compact-h" style={{ display: 'block', marginBottom: '0.5rem' }}>Enter Commander Name</label>

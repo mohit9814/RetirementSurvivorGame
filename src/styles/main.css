@@ -160,11 +160,12 @@ h4 {
 .dashboard-container {
   display: grid;
   grid-template-areas:
-    "header header header"
-    "buckets buckets buckets"
-    "chart chart controls";
-  grid-template-rows: auto 1fr 1fr;
-  grid-template-columns: 1fr 1fr 1fr;
+    "header"
+    "buckets"
+    "controls"
+    "main";
+  grid-template-rows: auto auto auto 1fr;
+  grid-template-columns: 1fr;
   gap: var(--space-md);
   height: 100vh;
   padding: var(--space-md);

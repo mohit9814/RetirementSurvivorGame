@@ -19,13 +19,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ gameState, onNextYear, onRe
 
     return (
         <div className="glass-panel" style={{
-            padding: isMobile ? '0.5rem' : '1.5rem',
-            flex: isMobile ? 'none' : 1,
+            padding: '0.75rem',
+            // flex: isMobile ? 'none' : 1, // Removed flex: 1 to prevent taking up vertical space
             display: 'flex',
-            flexDirection: isMobile ? 'row' : 'column',
-            gap: isMobile ? '0.5rem' : '1rem',
-            justifyContent: isMobile ? 'space-between' : 'center',
-            alignItems: isMobile ? 'center' : 'stretch'
+            flexDirection: 'row', // Always row
+            gap: '1.5rem',
+            justifyContent: 'space-between',
+            alignItems: 'center'
         }}>
             {/* Year & Inflation Display */}
             <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
@@ -61,34 +61,35 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ gameState, onNextYear, onRe
                 </div>
             )}
 
-            {/* Game Controls */}
+            {/* Game Controls - Compact Row */}
             {gameState.isGameOver ? (
-                <div style={{
-                    padding: isMobile ? '0.5rem' : '1rem',
-                    background: gameState.gameOverReason?.includes('Victory') ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                    border: `1px solid ${gameState.gameOverReason?.includes('Victory') ? 'var(--color-success)' : 'var(--color-danger)'}`,
-                    borderRadius: 'var(--radius-md)',
-                    textAlign: 'center',
-                    flex: isMobile ? 1 : 'none'
-                }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                     <div style={{
                         color: gameState.gameOverReason?.includes('Victory') ? 'var(--color-success)' : 'var(--color-danger)',
-                        fontWeight: 'bold', fontSize: isMobile ? '0.9rem' : '1.2rem', marginBottom: isMobile ? '0.25rem' : '0.5rem'
+                        fontWeight: 'bold', fontSize: '1rem', whiteSpace: 'nowrap'
                     }}>
-                        {gameState.gameOverReason?.includes('Victory') ? '🎉 VICTORY!' : 'GAME OVER'}
+                        {gameState.gameOverReason?.includes('Victory') ? '🎉 VICTORY' : '💀 GAME OVER'}
                     </div>
-                    {!isMobile && <div style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>{gameState.gameOverReason}</div>}
 
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                        <button className="btn" onClick={onRestart} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid var(--glass-border)', padding: isMobile ? '0.25rem 0.5rem' : undefined, fontSize: isMobile ? '0.7rem' : undefined }}>
-                            Restart
+                    <button className="btn" onClick={onRestart} style={{
+                        background: 'rgba(255,255,255,0.1)',
+                        border: '1px solid var(--glass-border)',
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.9rem'
+                    }}>
+                        Restart
+                    </button>
+
+                    {gameState.gameOverReason?.includes('Victory') && onExtend && (
+                        <button className="btn" onClick={onExtend} style={{
+                            background: 'var(--color-success)',
+                            color: 'white',
+                            padding: '0.5rem 1rem',
+                            fontSize: '0.9rem'
+                        }}>
+                            +10Y
                         </button>
-                        {gameState.gameOverReason?.includes('Victory') && onExtend && (
-                            <button className="btn" onClick={onExtend} style={{ background: 'var(--color-success)', color: 'white', padding: isMobile ? '0.25rem 0.5rem' : undefined, fontSize: isMobile ? '0.7rem' : undefined }}>
-                                +10Y 🚀
-                            </button>
-                        )}
-                    </div>
+                    )}
                 </div>
             ) : (
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
