@@ -70,8 +70,11 @@ const MissionLog: React.FC<MissionLogProps> = ({ history }) => {
                             if (h.rebalancingMoves && Array.isArray(h.rebalancingMoves) && h.rebalancingMoves.length > 0) {
                                 rebalancingNodes = (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <div style={{ fontSize: '0.7rem', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px', fontWeight: 700 }}>
+                                            ⚡ Auto-Rebalancing
+                                        </div>
                                         {h.rebalancingMoves.map((m, idx) => (
-                                            <div key={idx} style={{ fontSize: '0.8rem' }}>
+                                            <div key={idx} style={{ fontSize: '0.8rem', paddingLeft: '8px', borderLeft: '2px solid rgba(251, 191, 36, 0.3)' }}>
                                                 <span style={{ color: '#fbbf24', fontWeight: 500 }}>{m.reason}</span>:
                                                 <span style={{ color: '#fff', marginLeft: '4px' }}>{formatCurrency(m.amount)}</span>
                                                 <span style={{ color: '#94a3b8', marginLeft: '4px', fontSize: '0.75rem' }}>

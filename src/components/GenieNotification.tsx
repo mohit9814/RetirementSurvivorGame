@@ -6,13 +6,14 @@ interface GenieNotificationProps {
     latestMoves?: RebalancingEvent[];
     year: number;
     speed: number;
+    showInterventions?: boolean;
 }
 
-const GenieNotification: React.FC<GenieNotificationProps> = ({ latestMoves, year, speed }) => {
-    // Only render if we have moves
-    if (!latestMoves || latestMoves.length === 0) return null;
+const GenieNotification: React.FC<GenieNotificationProps> = ({ latestMoves, year, speed, showInterventions = true }) => {
+    // Only render if enabled and we have moves
+    if (!showInterventions || !latestMoves || latestMoves.length === 0) return null;
 
-    // Responsive Check (Simple width check or hook)
+    // Responsive Check
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
     useEffect(() => {
@@ -21,180 +22,90 @@ const GenieNotification: React.FC<GenieNotificationProps> = ({ latestMoves, year
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Fixed positions as simple percentages for Desktop
-    const positions = ['16.66%', '50%', '83.33%'];
-    const getPos = (i: number) => positions[i];
+    const [isVisible, setIsVisible] = useState(true);
 
-    // Duration: 90% of year tick to maximize visibility
-    const durationSec = (speed * 0.9) / 1000;
+    // Reset visibility when year changes
+    // Reset visibility when year changes
+    useEffect(() => {
+        setIsVisible(true);
+        // Auto-dismiss based on speed, but minimum 3s to be readable
+        const duration = Math.max(3000, speed * 5);
+        const timer = setTimeout(() => setIsVisible(false), duration);
+        return () => clearTimeout(timer);
+    }, [year]);
 
-    if (isMobile) {
-        // MOBILE EXPERIENCE: Insight Card (Bottom Sheet)
-        // Auto-dismiss after 6 seconds to give user time to read, but non-blocking so game continues if needed.
-        // Actually, since it's "speed" based, maybe we should stick to speed? 
-        // No, mobile users need more time. Hardcode a clearer duration or use speed * 2.
+    const handleDismiss = () => setIsVisible(false);
 
-        return (
-            <div className="fixed inset-x-0 bottom-24 z-[100] px-4 animate-in slide-in-from-bottom-5 fade-in duration-500" style={{ pointerEvents: 'none' }}>
-                <div className="bg-slate-900/95 backdrop-blur-md border border-amber-500/30 text-slate-100 p-4 rounded-xl shadow-2xl ring-1 ring-black/5" style={{ pointerEvents: 'auto' }}>
-                    <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-amber-100 border-2 border-amber-400 overflow-hidden shadow-sm">
-                            <img src="/src/assets/einstein.png" alt="Wizard" className="w-full h-full object-cover"
-                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerText = '🧙‍♂️'; }} />
+    if (!isVisible) return null;
+
+    // Unified Card UI for both Desktop and Mobile
+    return (
+        <div
+            onClick={handleDismiss}
+            style={{
+                position: 'fixed',
+                bottom: isMobile ? '80px' : '2rem',
+                left: isMobile ? '1rem' : 'auto',
+                right: isMobile ? '1rem' : '2rem',
+                width: isMobile ? 'auto' : '400px',
+                zIndex: 100,
+                cursor: 'pointer',
+                animation: 'slideUp 0.5s ease-out forwards'
+            }}>
+            <div className="glass-panel" style={{
+                padding: '1rem',
+                background: 'rgba(15, 23, 42, 0.95)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                    <div style={{
+                        width: '48px', height: '48px', flexShrink: 0,
+                        borderRadius: '50%', background: '#fef3c7',
+                        border: '2px solid #fbbf24', overflow: 'hidden',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                        <img src="/src/assets/einstein.png" alt="Wizard" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerText = '🧙‍♂️'; }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ marginBottom: '0.75rem' }}>
+                            <h4 style={{ margin: 0, color: '#fbbf24', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Portfolio Rebalancing</h4>
+                            <p style={{ margin: '0.25rem 0 0', color: '#94a3b8', fontSize: '0.8rem', lineHeight: '1.4' }}>Strategy logic applied to maintain targets.</p>
                         </div>
-                        <div className="flex-1 space-y-3">
-                            <div>
-                                <h4 className="font-bold text-amber-400 text-sm uppercase tracking-wider mb-1">Strategy Intervention</h4>
-                                <p className="text-xs text-slate-400 leading-tight">I've rebalanced your portfolio to stay on track.</p>
-                            </div>
 
-                            <div className="space-y-2">
-                                {latestMoves.map((move, i) => (
-                                    <div key={i} className="bg-white/5 rounded-lg p-2.5 border border-white/10">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className="font-medium text-amber-100 text-sm">{move.reason}</span>
-                                            <span className="font-bold text-white text-sm">{formatCurrency(move.amount)}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-xs text-slate-400">
-                                            <span>Bucket {move.fromBucketIndex + 1}</span>
-                                            <span className="material-symbols-outlined text-[10px] text-slate-500">arrow_forward</span>
-                                            <span>Bucket {move.toBucketIndex + 1}</span>
-                                            {(move.taxIncurred ?? 0) > 0 && (
-                                                <span className="ml-auto text-red-400 flex items-center gap-1">
-                                                    <span className="material-symbols-outlined text-[10px]">receipt_long</span>
-                                                    -{formatCurrency(move.taxIncurred ?? 0)} Tax
-                                                </span>
-                                            )}
-                                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {latestMoves.map((move, i) => (
+                                <div key={i} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.6rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                        <span style={{ color: '#fef3c7', fontSize: '0.85rem', fontWeight: 500 }}>{move.reason}</span>
+                                        <span style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 700 }}>{formatCurrency(move.amount)}</span>
                                     </div>
-                                ))}
-                            </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#94a3b8' }}>
+                                        <span>B{move.fromBucketIndex + 1}</span>
+                                        <span>➝</span>
+                                        <span>B{move.toBucketIndex + 1}</span>
+                                        {(move.taxIncurred ?? 0) > 0 && (
+                                            <span style={{ marginLeft: 'auto', color: '#f87171', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <span>💸</span>
+                                                -{formatCurrency(move.taxIncurred ?? 0)} Tax
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
             </div>
-        );
-    }
-
-    // DESKTOP EXPERIENCE: Flying Animations
-    return (
-        <div style={{
-            position: 'absolute',
-            inset: 0,
-            pointerEvents: 'none',
-            zIndex: 100,
-            overflow: 'hidden'
-        }}>
-            {/* Static Keyframes Definition - Rendered Once */}
             <style>{`
-                @keyframes wizard-fly {
-                    0% { left: var(--start-pos); opacity: 0; transform: translateX(-50%) scale(0.5); }
-                    10% { opacity: 1; transform: translateX(-50%) scale(1); }
-                    80% { left: var(--end-pos); opacity: 1; transform: translateX(-50%) scale(1); }
-                    100% { left: var(--end-pos); opacity: 0; transform: translateX(-50%) scale(0.8); }
-                }
-                @keyframes tax-fly {
-                    0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
-                    20% { transform: translate(-50%, -40px) scale(1); opacity: 1; }
-                    80% { transform: translate(-50%, -80px) scale(1); opacity: 1; }
-                    100% { transform: translate(-50%, -120px) scale(0.5); opacity: 0; }
+                @keyframes slideUp {
+                    from { transform: translateY(20px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
                 }
             `}</style>
-
-            {latestMoves.map((move, i) => {
-                const uniqueKey = `${year}-${i}`;
-                const start = getPos(move.fromBucketIndex);
-                const end = getPos(move.toBucketIndex);
-
-                // Stagger: 15% of speed per item (tighter overlap)
-                const delaySec = (i * (speed * 0.15)) / 1000;
-
-                // Pass dynamic positions via CSS Variables
-                const dynamicStyle = {
-                    '--start-pos': start,
-                    '--end-pos': end,
-                    position: 'absolute',
-                    bottom: '40%',
-                    left: start, // Fallback
-                    transform: 'translateX(-50%)',
-                    // Use 'linear' or 'ease-out' for better readability while moving
-                    animation: `wizard-fly ${durationSec}s ease-out forwards`,
-                    animationDelay: `${delaySec}s`,
-                    opacity: 0,
-                    pointerEvents: 'none' // CRITICAL: Ensure invisible wizards don't block clicks
-                } as React.CSSProperties;
-
-                return (
-                    <div key={uniqueKey} className="wizard-flyer" style={dynamicStyle}>
-                        <WizardIcon />
-                        <WizardBubble move={move} />
-
-                        {/* Tax Animation Particle */}
-                        {(move.taxIncurred ?? 0) > 0 && (
-                            <div style={{
-                                position: 'absolute',
-                                left: '50%', top: '50%',
-                                animation: `tax-fly ${durationSec}s ease-in-out forwards`,
-                                animationDelay: `${delaySec + (durationSec * 0.5)}s`, // Start mid-flight
-                                opacity: 0,
-                                zIndex: 5
-                            }}>
-                                <div style={{
-                                    background: '#ef4444', color: 'white',
-                                    padding: '4px 8px', borderRadius: '12px',
-                                    fontSize: '0.7rem', fontWeight: 'bold',
-                                    display: 'flex', alignItems: 'center', gap: '4px',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                }}>
-                                    💸 -{formatCurrency(move.taxIncurred ?? 0)}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-            })}
         </div>
     );
 };
-
-const WizardIcon = () => (
-    <div style={{
-        width: '80px', height: '80px',
-        background: 'white', borderRadius: '50%',
-        boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        overflow: 'hidden',
-        border: '3px solid #fbbf24',
-        marginBottom: '0.75rem'
-    }}>
-        <img src="/src/assets/einstein.png" alt="Wizard" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerText = '🧙‍♂️'; }} />
-    </div>
-);
-
-const WizardBubble = ({ move }: { move: RebalancingEvent }) => (
-    <div style={{
-        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-        color: 'white',
-        padding: '0.5rem 1rem',
-        borderRadius: '16px',
-        border: '1px solid #fbbf24',
-        fontSize: '0.85rem',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-        textAlign: 'center',
-        whiteSpace: 'nowrap',
-        minWidth: '120px'
-    }}>
-        <div style={{ fontWeight: 700, color: '#fbbf24', marginBottom: '2px' }}>{move.reason}</div>
-        <div style={{ color: '#fff', fontWeight: 500 }}>
-            {formatCurrency(move.amount)}
-        </div>
-        {(move.taxIncurred ?? 0) > 0 && (
-            <div style={{ color: '#f87171', fontSize: '0.7rem', marginTop: '2px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '2px' }}>
-                Tax: {formatCurrency(move.taxIncurred ?? 0)}
-            </div>
-        )}
-    </div>
-);
 
 export default GenieNotification;

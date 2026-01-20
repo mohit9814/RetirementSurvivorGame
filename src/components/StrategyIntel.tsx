@@ -203,6 +203,9 @@ const StrategyIntel: React.FC = () => {
                             <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
                                 <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
                                     Empirical Benchmarks (500 Sims x 50 Years)
+                                    <div style={{ fontSize: '0.65rem', color: '#64748b', textTransform: 'none', marginTop: '2px' }}>
+                                        Results based on: 4 Cr Corpus | 7% Inflation | 2% Real Return
+                                    </div>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
                                     <div>
@@ -231,7 +234,7 @@ const StrategyIntel: React.FC = () => {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                             <div>
                                 <h3 style={{ fontSize: '1.1rem', color: '#4ade80', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span className="material-symbols-outlined">thumb_up</span> Pros
+                                    <span>👍</span> Pros
                                 </h3>
                                 <ul style={{ paddingLeft: '1.2rem', margin: 0, color: '#cbd5e1', lineHeight: '1.6' }}>
                                     {activeData.pros.map((item, i) => (
@@ -241,7 +244,7 @@ const StrategyIntel: React.FC = () => {
                             </div>
                             <div>
                                 <h3 style={{ fontSize: '1.1rem', color: '#f87171', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span className="material-symbols-outlined">thumb_down</span> Cons
+                                    <span>👎</span> Cons
                                 </h3>
                                 <ul style={{ paddingLeft: '1.2rem', margin: 0, color: '#cbd5e1', lineHeight: '1.6' }}>
                                     {activeData.cons.map((item, i) => (

@@ -47,27 +47,7 @@ const BucketCard: React.FC<BucketCardProps> = ({
         }
     };
 
-    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const pct = parseFloat(e.target.value);
-        setTransferPercent(pct);
-        // Update input box to show equivalent Lakhs
-        const amt = (pct / 100) * maxTransferableAmount;
-        setTransferInput((amt / 100000).toFixed(2));
-    };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value;
-        setTransferInput(val);
-
-        const numVal = parseFloat(val);
-        if (!isNaN(numVal) && maxTransferableAmount > 0) {
-            const amt = numVal * 100000;
-            const pct = Math.min(100, Math.max(0, (amt / maxTransferableAmount) * 100));
-            setTransferPercent(pct);
-        } else {
-            setTransferPercent(0);
-        }
-    };
 
     return (
         <div className={`glass-panel`}
@@ -131,17 +111,17 @@ const BucketCard: React.FC<BucketCardProps> = ({
                     position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     textShadow: '0 2px 4px rgba(0,0,0,0.8)', zIndex: 2
                 }}>
-                    <span className="hero-text" style={{ fontSize: isMobile ? '1rem' : '2rem', lineHeight: 1 }}>{percentage.toFixed(0)}<span style={{ fontSize: isMobile ? '0.6rem' : '1rem', opacity: 0.7 }}>%</span></span>
+                    <span className="hero-text" style={{ fontSize: isMobile ? '0.9rem' : '2rem', lineHeight: 1 }}>{percentage.toFixed(0)}<span style={{ fontSize: isMobile ? '0.7rem' : '1rem', opacity: 0.8 }}>%</span></span>
                 </div>
             </div>
 
             <div style={{ textAlign: 'center' }}>
-                <div className="hero-text" style={{ fontSize: isMobile ? '0.85rem' : '1.5rem', marginBottom: isMobile ? '0' : '0.25rem' }}>{formatCurrency(bucket.balance)}</div>
+                <div className="hero-text" style={{ fontSize: isMobile ? '0.8rem' : '1.5rem', marginBottom: isMobile ? '0' : '0.25rem' }}>{formatCurrency(bucket.balance)}</div>
                 <div style={{
-                    fontSize: isMobile ? '0.55rem' : '0.85rem', fontWeight: 600,
+                    fontSize: isMobile ? '0.6rem' : '0.85rem', fontWeight: 600,
                     color: (bucket.lastYearReturn >= 0 ? 'var(--color-success)' : 'var(--color-danger)'),
                     background: (bucket.lastYearReturn >= 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(220, 38, 38, 0.1)'),
-                    display: 'inline-block', padding: isMobile ? '0 0.25rem' : '0.1rem 0.5rem', borderRadius: '4px'
+                    display: 'inline-block', padding: isMobile ? '0 0.3rem' : '0.1rem 0.5rem', borderRadius: '4px'
                 }}>
                     {bucket.lastYearReturn > 0 ? '+' : ''}{(bucket.lastYearReturn * 100).toFixed(isMobile ? 1 : 2)}%
                 </div>
@@ -210,7 +190,7 @@ const BucketCard: React.FC<BucketCardProps> = ({
                 {isTransferTarget ? (
                     <div onClick={e => e.stopPropagation()} style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '8px', padding: '0.75rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Amount (Lakhs)</label>
+                            <label style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Amount</label>
                             <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--color-accent)' }}>{transferPercent.toFixed(1)}%</span>
                         </div>
 
@@ -218,12 +198,36 @@ const BucketCard: React.FC<BucketCardProps> = ({
                             <input
                                 type="text"
                                 value={transferInput}
-                                onChange={handleInputChange}
-                                placeholder="0"
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setTransferInput(val);
+
+                                    // Live Parse Attempt (Debounce ideally, but direct for now)
+                                    let numVal = parseFloat(val.replace(/[^0-9.]/g, ''));
+                                    if (!isNaN(numVal) && maxTransferableAmount > 0) {
+                                        // Detect Unit context
+                                        const lowerVal = val.toLowerCase();
+                                        if (lowerVal.includes('c')) numVal *= 10000000;
+                                        else if (lowerVal.includes('l')) numVal *= 100000;
+                                        else if (lowerVal.includes('k')) numVal *= 1000;
+                                        // Default assumption: specific raw value if no unit provided? 
+                                        // Actually, let's assume raw if no suffix, unless it's tiny (<100) then maybe it's percentage? 
+                                        // No, stay consistent: Raw number = Rupees. 
+
+                                        const pct = Math.min(100, Math.max(0, (numVal / maxTransferableAmount) * 100));
+                                        setTransferPercent(pct);
+                                    }
+                                }}
+                                onBlur={() => {
+                                    // On blur, re-format nicely
+                                    const amt = (transferPercent / 100) * maxTransferableAmount;
+                                    setTransferInput(formatCurrency(amt));
+                                }}
+                                placeholder="₹0"
                                 autoFocus
                                 style={{
-                                    width: '80px', padding: '0.25rem', borderRadius: '4px', border: '1px solid var(--glass-border)',
-                                    background: 'rgba(255,255,255,0.1)', color: 'white', textAlign: 'right', fontSize: '0.9rem'
+                                    width: '100px', padding: '0.25rem', borderRadius: '4px', border: '1px solid var(--glass-border)',
+                                    background: 'rgba(255,255,255,0.1)', color: 'white', textAlign: 'right', fontSize: '0.85rem'
                                 }}
                             />
                             <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
@@ -233,7 +237,12 @@ const BucketCard: React.FC<BucketCardProps> = ({
                                     max="100"
                                     step="0.1"
                                     value={transferPercent}
-                                    onChange={handleSliderChange}
+                                    onChange={(e) => {
+                                        const pct = parseFloat(e.target.value);
+                                        setTransferPercent(pct);
+                                        const amt = (pct / 100) * maxTransferableAmount;
+                                        setTransferInput(formatCurrency(amt));
+                                    }}
                                     style={{ width: '100%', accentColor: 'var(--color-accent)', cursor: 'pointer' }}
                                 />
                             </div>

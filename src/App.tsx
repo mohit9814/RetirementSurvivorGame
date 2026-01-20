@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useGame } from './hooks/useGame';
 import BucketCard from './components/BucketCard';
-import ControlPanel from './components/ControlPanel';
+
 import SetupForm from './components/SetupForm';
 import ConfigModal from './components/ConfigModal';
 import BurnDownChart from './components/BurnDownChart';
@@ -36,6 +36,7 @@ function App() {
   // Chart Mode State
   const [chartMode, setChartMode] = useState<'wealth' | 'buckets' | 'allocation' | 'comparison'>('wealth');
   const [viewMode, setViewMode] = useState<'visuals' | 'data' | 'intel'>('visuals');
+  const [isInspecting, setIsInspecting] = useState(false); // New state for Game Over inspection
 
   // Use the game hook
   const { gameState, nextYear, transfer, restartGame, updateConfig, playback } = useGame();
@@ -98,6 +99,58 @@ function App() {
     }
   };
 
+  const handleExportData = () => {
+    try {
+      const headers = ['Year', 'Total Wealth (Cr)', 'Tax Paid', 'Withdrawn', 'B1 Balance', 'B1 Return', 'B2 Balance', 'B2 Return', 'B3 Balance', 'B3 Return', 'Rebalancing Log'];
+      if (!gameState.history || gameState.history.length === 0) {
+        alert("No simulation data to export yet.");
+        return;
+      }
+      const rows = gameState.history.map(h => {
+        let logString: string = '';
+        if (Array.isArray(h.rebalancingMoves)) {
+          const buckets = ['Cash', 'Income', 'Growth'];
+          logString = h.rebalancingMoves.map(m => {
+            const from = buckets[m.fromBucketIndex] || `B${m.fromBucketIndex + 1}`;
+            const to = buckets[m.toBucketIndex] || `B${m.toBucketIndex + 1}`;
+            return `${m.reason}: ${formatCurrency(m.amount)} (${from} -> ${to})`;
+          }).join('; ');
+        } else if (typeof h.rebalancingMoves === 'string') {
+          logString = h.rebalancingMoves;
+        }
+        const log = `"${logString.replace(/"/g, '""').replace(/\n/g, ' ')}"`;
+
+        return [
+          h.year,
+          (h.totalWealth / 10000000).toFixed(4),
+          h.taxPaid.toFixed(2),
+          h.withdrawn.toFixed(2),
+          h.buckets[0].balance.toFixed(2),
+          (h.buckets[0].lastYearReturn * 100).toFixed(2) + '%',
+          h.buckets[1].balance.toFixed(2),
+          (h.buckets[1].lastYearReturn * 100).toFixed(2) + '%',
+          h.buckets[2].balance.toFixed(2),
+          (h.buckets[2].lastYearReturn * 100).toFixed(2) + '%',
+          log
+        ].join(',');
+      });
+
+      const csvContent = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `simulation_data_${gameState.sessionId || 'run'}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+    } catch (err) {
+      console.error("Export failed:", err);
+      alert("Failed to export data. See console for details.");
+    }
+  };
+
   // Dashboard Layout
   return (
     <ErrorBoundary>
@@ -108,115 +161,102 @@ function App() {
             <WelcomeScreen onStart={setUsername} />
           ) : (
             <>
-              {/* Global Rebalancing Notification Layer */}
               <GenieNotification
                 latestMoves={gameState.history[gameState.history.length - 1]?.rebalancingMoves}
                 year={gameState.currentYear}
                 speed={speed}
+                showInterventions={false}
               />
 
-
-
-
-              <header className="dashboard-header" style={{ padding: '0 0.5rem', position: 'relative', zIndex: 101, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <header className="dashboard-header" style={{
+                padding: '0.5rem',
+                position: 'relative',
+                zIndex: 101,
+                display: 'flex',
+                flexWrap: 'wrap', // Allow wrapping on small mobile
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.5rem'
+              }}>
+                {/* Left: Title & Strategy */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <h1 style={{
-                    fontSize: '1.25rem', fontWeight: 700, margin: 0, letterSpacing: '-0.03em',
+                    fontSize: '1.1rem', fontWeight: 700, margin: 0, letterSpacing: '-0.03em',
                     background: 'linear-gradient(to right, #38bdf8, #818cf8)',
                     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                     display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'
                   }} onClick={() => setShowLeaderboard(true)}>
-                    <span style={{ fontSize: '1.5rem' }}>🚀</span> Retirement Bucket Survivor
+                    <span>🚀</span> Retirement Survivor
                   </h1>
-
-                  {/* Strategy Selector (Only when running) */}
                   {hasStarted && (
-                    <StrategyHeader
-                      currentStrategy={gameState.config.rebalancingStrategy}
-                      onStrategyChange={(strat) => updateConfig({ ...gameState.config, rebalancingStrategy: strat })}
-                    />
+                    <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
+                      <StrategyHeader
+                        currentStrategy={gameState.config.rebalancingStrategy}
+                        onStrategyChange={(strat) => updateConfig({ ...gameState.config, rebalancingStrategy: strat })}
+                      />
+                    </div>
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem' }} onClick={() => setShowLeaderboard(true)}>
-                    🏆 Leaderboard
-                  </button>
+                {/* Right: Controls & Menu */}
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginLeft: 'auto' }}>
+
+                  {hasStarted && !gameState.isGameOver && (
+                    <div className="control-group" style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '2px' }}>
+                      {/* Speed */}
+                      <div style={{ display: 'flex', borderRight: '1px solid rgba(255,255,255,0.1)', paddingRight: '4px', marginRight: '4px' }}>
+                        {[1000, 200].map((s) => (
+                          <button key={s} onClick={() => playback.setSpeed(s)} style={{
+                            padding: '4px', fontSize: '0.7rem', border: 'none', background: 'transparent',
+                            color: speed === s ? '#fbbf24' : '#64748b', fontWeight: 700, cursor: 'pointer'
+                          }}>{s === 1000 ? '1x' : '5x'}</button>
+                        ))}
+                      </div>
+
+                      {/* Step */}
+                      <button className="btn" onClick={handleNextYear} disabled={playback.isPlaying} style={{
+                        padding: '6px 10px', background: 'transparent', border: 'none', color: '#cbd5e1', cursor: playback.isPlaying ? 'not-allowed' : 'pointer', opacity: playback.isPlaying ? 0.3 : 1
+                      }} title="Step 1 Year">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                      </button>
+
+                      {/* PLAY/PAUSE - Prominent */}
+                      <button className="btn" onClick={playback.togglePlay} style={{
+                        padding: '6px 16px', borderRadius: '6px', border: 'none',
+                        background: playback.isPlaying ? '#fbbf24' : '#22c55e',
+                        color: playback.isPlaying ? '#78350f' : 'white',
+                        fontWeight: 700, fontSize: '0.9rem',
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+                      }}>
+                        {playback.isPlaying ? '⏸' : '▶'}
+                      </button>
+                    </div>
+                  )}
+
+                  {gameState.isGameOver && isInspecting && (
+                    <div style={{ display: 'flex', marginLeft: 'auto' }}>
+                      <button className="btn" onClick={() => setIsInspecting(false)} style={{
+                        background: '#fbbf24', color: '#78350f', padding: '0.5rem 1rem', fontSize: '0.9rem', fontWeight: 700,
+                        boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)'
+                      }}>
+                        🏆 Show Result
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Settings Gear */}
                   {hasStarted && (
-                    <>
-                      <span style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>Year {gameState.currentYear}</span>
-                      <button
-                        onClick={() => setShowConfig(true)}
-                        className="btn"
-                        style={{ background: 'rgba(255,255,255,0.1)', padding: '0.5rem', display: 'flex', alignItems: 'center', color: '#94a3b8' }}
-                        title="Advanced Settings (Geeks Only)"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-                          <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => {
-                          try {
-                            // Global CSV Export Logic
-                            const headers = ['Year', 'Total Wealth (Cr)', 'Tax Paid', 'Withdrawn', 'B1 Balance', 'B1 Return', 'B2 Balance', 'B2 Return', 'B3 Balance', 'B3 Return', 'Rebalancing Log'];
-                            if (!gameState.history || gameState.history.length === 0) {
-                              alert("No simulation data to export yet.");
-                              return;
-                            }
-                            const rows = gameState.history.map(h => {
-                              // Serialize logs: safely handle array vs string
-                              let logString: string = '';
-                              if (Array.isArray(h.rebalancingMoves)) {
-                                const buckets = ['Cash', 'Income', 'Growth'];
-                                logString = h.rebalancingMoves.map(m => {
-                                  const from = buckets[m.fromBucketIndex] || `B${m.fromBucketIndex + 1}`;
-                                  const to = buckets[m.toBucketIndex] || `B${m.toBucketIndex + 1}`;
-                                  return `${m.reason}: ${formatCurrency(m.amount)} (${from} -> ${to})`;
-                                }).join('; ');
-                              } else if (typeof h.rebalancingMoves === 'string') {
-                                logString = h.rebalancingMoves;
-                              }
-
-                              const log = `"${logString.replace(/"/g, '""').replace(/\n/g, ' ')}"`;
-
-                              return [
-                                h.year,
-                                (h.totalWealth / 10000000).toFixed(4),
-                                h.taxPaid.toFixed(2),
-                                h.withdrawn.toFixed(2),
-                                h.buckets[0].balance.toFixed(2),
-                                (h.buckets[0].lastYearReturn * 100).toFixed(2) + '%',
-                                h.buckets[1].balance.toFixed(2),
-                                (h.buckets[1].lastYearReturn * 100).toFixed(2) + '%',
-                                h.buckets[2].balance.toFixed(2),
-                                (h.buckets[2].lastYearReturn * 100).toFixed(2) + '%',
-                                log
-                              ].join(',');
-                            });
-
-                            const csvContent = [headers.join(','), ...rows].join('\n');
-                            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                            const url = URL.createObjectURL(blob);
-                            const link = document.createElement('a');
-                            link.setAttribute('href', url);
-                            link.setAttribute('download', `simulation_data_${gameState.sessionId || 'run'}.csv`);
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            setTimeout(() => URL.revokeObjectURL(url), 100); // Slight delay to ensure download starts
-                          } catch (err) {
-                            console.error("Export failed:", err);
-                            alert("Failed to export data. See console for details.");
-                          }
-                        }}
-                        className="btn btn-secondary"
-                        style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem' }}
-                      >
-                        ⬇ Export Data
-                      </button>
-                    </>
+                    <button
+                      onClick={() => setShowConfig(true)}
+                      className="btn"
+                      style={{ background: 'rgba(255,255,255,0.1)', padding: '0.6rem', color: '#94a3b8', borderRadius: '50%' }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                      </svg>
+                    </button>
                   )}
                 </div>
               </header>
@@ -237,6 +277,8 @@ function App() {
                   updateConfig(newConfig);
                   setShowConfig(false);
                 }}
+                onShowLeaderboard={() => setShowLeaderboard(true)}
+                onExportData={handleExportData}
               />
 
               <MilestoneCelebration
@@ -249,8 +291,6 @@ function App() {
                 year={gameState.currentYear}
                 trigger={expenseTrigger}
               />
-
-
 
               {
                 !hasStarted ? (
@@ -278,40 +318,20 @@ function App() {
                       ))}
                     </section>
 
-                    {/* Compact Controls Bar */}
-                    <section style={{ gridArea: 'controls', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                      {/* Playback Controls */}
-                      <div style={{ flex: '0 0 auto' }}>
-                        <ControlPanel
-                          gameState={gameState}
-                          onNextYear={handleNextYear}
-                          onRestart={() => {
-                            restartGame();
-                            setShowLeaderboard(true);
-                          }}
-                          onExtend={() => {
-                            updateConfig({
-                              ...gameState.config,
-                              survivalYears: gameState.config.survivalYears + 10
-                            });
-                          }}
-                          playback={playback}
-                        />
-                      </div>
-
-                      {/* Middle Tab Switcher - Refactored for aesthetics */}
-                      <div style={{ flex: 1, display: 'flex', gap: '0.75rem', alignItems: 'center', height: '100%', paddingLeft: '1rem' }}>
+                    {/* Compact Tabs Bar (Controls removed) */}
+                    <section className="dashboard-controls" style={{
+                      gridArea: 'controls', display: 'flex', gap: '0.75rem', alignItems: 'center',
+                      justifyContent: 'center', width: '100%'
+                    }}>
+                      {/* Tabs only now */}
+                      <div className="dashboard-tabs" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', width: '100%', maxWidth: '600px' }}>
                         <button
                           className={`btn ${viewMode === 'visuals' ? 'btn-primary' : ''}`}
                           style={{
-                            flex: 1,
-                            padding: '0.75rem',
-                            fontSize: '1rem', // Bigger text
-                            fontWeight: 600,
-                            borderRadius: '8px',
+                            flex: 1, padding: '0.75rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: '8px',
                             background: viewMode === 'visuals' ? undefined : 'rgba(255,255,255,0.05)',
                             border: '1px solid var(--glass-border)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
                           }}
                           onClick={() => setViewMode('visuals')}
                         >
@@ -320,40 +340,119 @@ function App() {
                         <button
                           className={`btn ${viewMode === 'data' ? 'btn-primary' : ''}`}
                           style={{
-                            flex: 1,
-                            padding: '0.75rem',
-                            fontSize: '1rem', // Bigger text
-                            fontWeight: 600,
-                            borderRadius: '8px',
+                            flex: 1, padding: '0.75rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: '8px',
                             background: viewMode === 'data' ? undefined : 'rgba(255,255,255,0.05)',
                             border: '1px solid var(--glass-border)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
                           }}
                           onClick={() => setViewMode('data')}
                         >
-                          <span>📋</span> Mission Log
+                          <span></span> Mission Log
                         </button>
                         <button
                           className={`btn ${viewMode === 'intel' ? 'btn-primary' : ''}`}
                           style={{
-                            flex: 1,
-                            padding: '0.75rem',
-                            fontSize: '1rem', // Bigger text
-                            fontWeight: 600,
-                            borderRadius: '8px',
+                            flex: 1, padding: '0.75rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: '8px',
                             background: viewMode === 'intel' ? undefined : 'rgba(255,255,255,0.05)',
                             border: '1px solid var(--glass-border)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
                           }}
                           onClick={() => setViewMode('intel')}
                         >
-                          <span>🧠</span> Strategy Intel
+                          <span>🧠</span> Intel
                         </button>
                       </div>
                     </section>
 
                     {/* Main Content Area */}
-                    <div style={{ gridArea: 'main', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100%', gap: '0.5rem' }}>
+                    <div style={{ gridArea: 'main', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100%', gap: '0.5rem', position: 'relative' }}>
+
+                      {/* Initial Instruction Overlay */}
+                      {hasStarted && gameState.currentYear === 0 && !playback.isPlaying && !gameState.isGameOver && (
+                        <div style={{
+                          position: 'absolute', top: '10%', left: '50%', transform: 'translate(-50%, 0)', zIndex: 50,
+                          background: 'rgba(56, 189, 248, 0.2)', border: '1px solid #38bdf8', padding: '1rem', borderRadius: '12px',
+                          backdropFilter: 'blur(8px)', textAlign: 'center', maxWidth: '90%'
+                        }}>
+                          <div style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>👈 <b>Step 1:</b> Select a Strategy (Top Left)</div>
+                          <div style={{ fontSize: '1.2rem' }}>👉 <b>Step 2:</b> Click <span style={{ background: '#22c55e', padding: '2px 8px', borderRadius: '4px', color: 'white' }}>▶</span> to Play</div>
+                        </div>
+                      )}
+
+                      {/* Game Over Overlay */}
+                      {gameState.isGameOver && !isInspecting && (
+                        <div style={{
+                          position: 'absolute', inset: 0, zIndex: 1000,
+                          background: 'rgba(15, 23, 42, 0.85)',
+                          backdropFilter: 'blur(10px)',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                          <div style={{
+                            background: 'rgba(30, 41, 59, 0.9)', padding: '2rem', borderRadius: '20px',
+                            border: '2px solid rgba(255,255,255,0.1)', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                            maxWidth: '400px', width: '90%', position: 'relative'
+                          }}>
+                            {/* Close Button */}
+                            <button
+                              onClick={() => setIsInspecting(true)}
+                              style={{
+                                position: 'absolute', top: '10px', right: '10px',
+                                background: 'rgba(255,255,255,0.1)', border: 'none', color: '#94a3b8',
+                                width: '32px', height: '32px', borderRadius: '50%',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', fontSize: '1.2rem', lineHeight: 1
+                              }}
+                              title="Close to Review Data"
+                            >
+                              &times;
+                            </button>
+
+                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
+                              {gameState.gameOverReason?.includes('Victory') ? '🏆' : '💀'}
+                            </div>
+                            <h2 style={{ fontSize: '2rem', margin: '0 0 0.5rem 0', color: gameState.gameOverReason?.includes('Victory') ? '#fbbf24' : '#f87171' }}>
+                              {gameState.gameOverReason?.includes('Victory') ? 'Mission Accomplished' : 'Bankrupt'}
+                            </h2>
+                            <p style={{ color: '#94a3b8', marginBottom: '1.5rem', fontSize: '1.1rem' }}>
+                              {gameState.gameOverReason || (gameState.currentYear >= gameState.config.survivalYears ? 'Target reached!' : 'Corpus depleted.')}
+                            </p>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+                              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '10px' }}>
+                                <div style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase' }}>Years Lasted</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white' }}>{gameState.currentYear} / {gameState.config.survivalYears}</div>
+                              </div>
+                              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '10px' }}>
+                                <div style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase' }}>Legacy Left</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#4ade80' }}>
+                                  {formatCurrency(gameState.buckets.reduce((a, b) => a + b.balance, 0))}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                              <button className="btn" onClick={() => setIsInspecting(true)} style={{
+                                background: 'transparent', border: '1px solid #94a3b8', color: '#cbd5e1', padding: '0.75rem 1.5rem', fontSize: '1rem', flex: '1 1 100%'
+                              }}>
+                                🔍 Review Data
+                              </button>
+
+                              <button className="btn" onClick={() => { restartGame(); setIsInspecting(false); setShowLeaderboard(true); }} style={{
+                                background: '#38bdf8', color: 'white', padding: '0.75rem 1.5rem', fontSize: '1rem', flex: 1
+                              }}>
+                                🔄 Restart
+                              </button>
+                              {gameState.gameOverReason?.includes('Victory') && (
+                                <button className="btn" onClick={() => updateConfig({ ...gameState.config, survivalYears: gameState.config.survivalYears + 10 })} style={{
+                                  background: '#22c55e', color: 'white', padding: '0.75rem 1.5rem', fontSize: '1rem', flex: 1
+                                }}>
+                                  Extend +10Y
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* CONTENT AREA */}
                       <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>

@@ -6,9 +6,11 @@ interface ConfigModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (newConfig: GameConfig) => void;
+    onShowLeaderboard?: () => void;
+    onExportData?: () => void;
 }
 
-const ConfigModal: React.FC<ConfigModalProps> = ({ config, isOpen, onClose, onSave }) => {
+const ConfigModal: React.FC<ConfigModalProps> = ({ config, isOpen, onClose, onSave, onShowLeaderboard, onExportData }) => {
     const [localConfig, setLocalConfig] = useState<GameConfig>(config);
 
     // Sync state with prop ONLY when modal opens
@@ -39,9 +41,32 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ config, isOpen, onClose, onSa
             display: 'flex', justifyContent: 'center', alignItems: 'center'
         }}>
             <div className="glass-panel" style={{ width: '90%', maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto', padding: '1.5rem' }}>
-                <h2 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
-                    Simulation Configuration
+                <h2 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Configuration</span>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
                 </h2>
+
+                {/* Quick Actions (Moved from Header) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+                    {onShowLeaderboard && (
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => { onShowLeaderboard(); onClose(); }}
+                            style={{ padding: '0.75rem', justifyContent: 'center' }}
+                        >
+                            🏆 Leaderboard
+                        </button>
+                    )}
+                    {onExportData && (
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => { onExportData(); onClose(); }}
+                            style={{ padding: '0.75rem', justifyContent: 'center' }}
+                        >
+                            ⬇ Export Data
+                        </button>
+                    )}
+                </div>
 
                 <div style={{ marginBottom: '1.5rem' }}>
                     <label style={{ display: 'block', marginBottom: '0.5rem' }}>Inflation Rate (Annual)</label>
@@ -81,6 +106,22 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ config, isOpen, onClose, onSa
                         Enable Taxation Simulation
                         <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>
                             Simulates New Regime Income Tax (Bucket 1 & 2) and LTCG (Bucket 3, &gt;1.25L)
+                        </div>
+                    </label>
+                </div>
+
+                <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+                    <input
+                        type="checkbox"
+                        id="notifyToggle"
+                        checked={localConfig.showInterventionPopups ?? true}
+                        onChange={e => setLocalConfig({ ...localConfig, showInterventionPopups: e.target.checked })}
+                        style={{ width: '20px', height: '20px' }}
+                    />
+                    <label htmlFor="notifyToggle" style={{ fontSize: '1rem', cursor: 'pointer' }}>
+                        Show Strategy Notifications
+                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>
+                            Show popup alerts when the strategy rebalances your portfolio.
                         </div>
                     </label>
                 </div>

@@ -59,6 +59,7 @@ export interface GameConfig {
     rebalancingStrategy: 'None' | 'RefillBucket1' | 'Tactical' | 'GlidePath' | 'FixedAllocation' | 'AI_Max_Survival' | 'Custom';
     customRebalancingTargetYears?: number; // For Custom Strategy
     tacticalCashBufferYears?: number; // For Tactical Strategy (Safety)
+    showInterventionPopups?: boolean; // Toggle for AI/Strategy notifications
     bucketConfigs: BucketConfig[];
 }
 
