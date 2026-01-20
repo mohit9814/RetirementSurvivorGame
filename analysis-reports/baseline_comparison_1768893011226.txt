@@ -1,0 +1,13 @@
+=====================================================================================
+🚀 HIGH FIDELITY STRATEGY BASELINE RUN
+=====================================================================================
+Date: 2026-01-20T07:10:11.228Z
+Simulations per Strategy: 500
+--- PARAMETERS ---
+Initial Corpus:   4.50 Cr
+Annual Expenses:  10.00 Lakhs
+Survival Horizon: 50 Years
+Inflation Rate:   7.0%
+-------------------------------------------------------------------------------------
+🔎 Optimization Start: Running 500 sims per configuration...
+Saving report to: A:\Retirement simulator game\analysis-reports\baseline_comparison_1768893011226.txt

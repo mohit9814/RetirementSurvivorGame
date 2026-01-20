@@ -1,0 +1,22 @@
+=====================================================================================
+🚀 HIGH FIDELITY STRATEGY BASELINE RUN
+=====================================================================================
+Date: 2026-01-20T07:35:59.187Z
+Simulations per Strategy: 500
+--- PARAMETERS ---
+Initial Corpus:   4.50 Cr
+Annual Expenses:  10.00 Lakhs
+Survival Horizon: 50 Years
+Inflation Rate:   7.0%
+-------------------------------------------------------------------------------------
+🔎 Optimization Start: Running 500 sims per configuration...
+Saving report to: A:\Retirement simulator game\analysis-reports\baseline_comparison_1768894559186.txt
+
+🏆 STRATEGY COMPARISON RESULTS 🏆
+-------------------------------------------------------------------------------------
+| Strategy          | Start Alloc      | Survival Rate | Median Years | Worst 10% |
+-------------------------------------------------------------------------------------
+| GlidePath         | 10%/50%/40%      | 94.4%         | 50           | 50        |
+| AI_Max_Survival   | 10%/50%/40%      | 89.8%         | 50           | 49        |
+| Tactical          | 10%/50%/40%      | 80.2%         | 50           | 45        |
+-------------------------------------------------------------------------------------

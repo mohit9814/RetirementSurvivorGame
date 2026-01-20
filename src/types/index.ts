@@ -25,6 +25,7 @@ export interface YearlyResult {
     taxPaid: number; // Total tax deducted this year
     marketEvent?: string; // e.g., "Crash", "Boom"
     rebalancingMoves?: RebalancingEvent[];
+    spendingCutApplied?: boolean; // True if inflation adjustment was skipped due to poor returns
 }
 
 export interface RebalancingEvent {

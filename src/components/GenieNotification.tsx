@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { RebalancingEvent } from '../types';
 import { formatCurrency } from '../utils/currency';
 
@@ -13,13 +12,71 @@ const GenieNotification: React.FC<GenieNotificationProps> = ({ latestMoves, year
     // Only render if we have moves
     if (!latestMoves || latestMoves.length === 0) return null;
 
-    // Fixed positions as simple percentages
+    // Responsive Check (Simple width check or hook)
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Fixed positions as simple percentages for Desktop
     const positions = ['16.66%', '50%', '83.33%'];
     const getPos = (i: number) => positions[i];
 
     // Duration: 90% of year tick to maximize visibility
     const durationSec = (speed * 0.9) / 1000;
 
+    if (isMobile) {
+        // MOBILE EXPERIENCE: Insight Card (Bottom Sheet)
+        // Auto-dismiss after 6 seconds to give user time to read, but non-blocking so game continues if needed.
+        // Actually, since it's "speed" based, maybe we should stick to speed? 
+        // No, mobile users need more time. Hardcode a clearer duration or use speed * 2.
+
+        return (
+            <div className="fixed inset-x-0 bottom-24 z-[100] px-4 animate-in slide-in-from-bottom-5 fade-in duration-500" style={{ pointerEvents: 'none' }}>
+                <div className="bg-slate-900/95 backdrop-blur-md border border-amber-500/30 text-slate-100 p-4 rounded-xl shadow-2xl ring-1 ring-black/5" style={{ pointerEvents: 'auto' }}>
+                    <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-amber-100 border-2 border-amber-400 overflow-hidden shadow-sm">
+                            <img src="/src/assets/einstein.png" alt="Wizard" className="w-full h-full object-cover"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerText = '🧙‍♂️'; }} />
+                        </div>
+                        <div className="flex-1 space-y-3">
+                            <div>
+                                <h4 className="font-bold text-amber-400 text-sm uppercase tracking-wider mb-1">Strategy Intervention</h4>
+                                <p className="text-xs text-slate-400 leading-tight">I've rebalanced your portfolio to stay on track.</p>
+                            </div>
+
+                            <div className="space-y-2">
+                                {latestMoves.map((move, i) => (
+                                    <div key={i} className="bg-white/5 rounded-lg p-2.5 border border-white/10">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="font-medium text-amber-100 text-sm">{move.reason}</span>
+                                            <span className="font-bold text-white text-sm">{formatCurrency(move.amount)}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-slate-400">
+                                            <span>Bucket {move.fromBucketIndex + 1}</span>
+                                            <span className="material-symbols-outlined text-[10px] text-slate-500">arrow_forward</span>
+                                            <span>Bucket {move.toBucketIndex + 1}</span>
+                                            {move.taxIncurred > 0 && (
+                                                <span className="ml-auto text-red-400 flex items-center gap-1">
+                                                    <span className="material-symbols-outlined text-[10px]">receipt_long</span>
+                                                    -{formatCurrency(move.taxIncurred)} Tax
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // DESKTOP EXPERIENCE: Flying Animations
     return (
         <div style={{
             position: 'absolute',
@@ -73,7 +130,7 @@ const GenieNotification: React.FC<GenieNotificationProps> = ({ latestMoves, year
                         <WizardBubble move={move} />
 
                         {/* Tax Animation Particle */}
-                        {move.taxIncurred && (
+                        {move.taxIncurred > 0 && (
                             <div style={{
                                 position: 'absolute',
                                 left: '50%', top: '50%',
@@ -132,7 +189,7 @@ const WizardBubble = ({ move }: { move: RebalancingEvent }) => (
         <div style={{ color: '#fff', fontWeight: 500 }}>
             {formatCurrency(move.amount)}
         </div>
-        {move.taxIncurred && (
+        {move.taxIncurred > 0 && (
             <div style={{ color: '#f87171', fontSize: '0.7rem', marginTop: '2px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '2px' }}>
                 Tax: {formatCurrency(move.taxIncurred)}
             </div>

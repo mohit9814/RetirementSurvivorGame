@@ -11,14 +11,17 @@ interface BucketCardProps {
     currentYear: number;
     isTransferSource?: boolean;
     isTransferTarget?: boolean;
+    maxTransferableAmount?: number;
     onTransferInitiate?: () => void;
     onTransferComplete?: (amount: number) => void;
 }
 
 const BucketCard: React.FC<BucketCardProps> = ({
-    bucket, history, totalWealth, index, currentYear, isTransferSource, isTransferTarget, onTransferInitiate, onTransferComplete
+    bucket, history, totalWealth, index, currentYear, isTransferSource, isTransferTarget, maxTransferableAmount = 0, onTransferInitiate, onTransferComplete
 }) => {
-    const [transferAmount, setTransferAmount] = useState(0);
+    const [transferPercent, setTransferPercent] = useState(0); // 0 to 100
+    const [transferInput, setTransferInput] = useState(''); // User input for Lakhs
+
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
 
     const percentage = totalWealth > 0 ? (bucket.balance / totalWealth) * 100 : 0;
@@ -34,10 +37,35 @@ const BucketCard: React.FC<BucketCardProps> = ({
         ? chartData.reduce((sum, d) => sum + d.return, 0) / chartData.length
         : 0;
 
-    const handleTransferSubmit = (rawAmount: number) => {
-        if (onTransferComplete && rawAmount > 0) {
-            onTransferComplete(rawAmount);
-            setTransferAmount(0);
+    const handleTransferSubmit = () => {
+        // Calculate amount from percentage to ensure precision
+        const amount = (transferPercent / 100) * maxTransferableAmount;
+        if (onTransferComplete && amount > 0) {
+            onTransferComplete(amount);
+            setTransferPercent(0);
+            setTransferInput('');
+        }
+    };
+
+    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const pct = parseFloat(e.target.value);
+        setTransferPercent(pct);
+        // Update input box to show equivalent Lakhs
+        const amt = (pct / 100) * maxTransferableAmount;
+        setTransferInput((amt / 100000).toFixed(2));
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setTransferInput(val);
+
+        const numVal = parseFloat(val);
+        if (!isNaN(numVal) && maxTransferableAmount > 0) {
+            const amt = numVal * 100000;
+            const pct = Math.min(100, Math.max(0, (amt / maxTransferableAmount) * 100));
+            setTransferPercent(pct);
+        } else {
+            setTransferPercent(0);
         }
     };
 
@@ -180,26 +208,41 @@ const BucketCard: React.FC<BucketCardProps> = ({
             {/* Actions - Simplified on Mobile */}
             <div style={{ marginTop: 'auto', paddingTop: isMobile ? '0.25rem' : '1rem', borderTop: isMobile ? 'none' : '1px dashed rgba(255,255,255,0.1)' }}>
                 {isTransferTarget ? (
-                    <div onClick={e => e.stopPropagation()}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Amount (Lakhs)</label>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div onClick={e => e.stopPropagation()} style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '8px', padding: '0.75rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                            <label style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Amount (Lakhs)</label>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--color-accent)' }}>{transferPercent.toFixed(1)}%</span>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                             <input
-                                type="number"
-                                value={transferAmount === 0 ? '' : transferAmount}
-                                onChange={e => setTransferAmount(parseFloat(e.target.value))}
+                                type="text"
+                                value={transferInput}
+                                onChange={handleInputChange}
                                 placeholder="0"
                                 autoFocus
                                 style={{
-                                    flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--glass-border)',
-                                    background: 'rgba(0,0,0,0.3)', color: 'white'
+                                    width: '80px', padding: '0.25rem', borderRadius: '4px', border: '1px solid var(--glass-border)',
+                                    background: 'rgba(255,255,255,0.1)', color: 'white', textAlign: 'right', fontSize: '0.9rem'
                                 }}
                             />
-                            <button className="btn" style={{ background: 'var(--color-success)', padding: '0.5rem 1rem' }} onClick={() => {
-                                // User enters Lakhs, we convert to absolute for logic
-                                handleTransferSubmit(transferAmount * 100000);
-                            }}>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    step="0.1"
+                                    value={transferPercent}
+                                    onChange={handleSliderChange}
+                                    style={{ width: '100%', accentColor: 'var(--color-accent)', cursor: 'pointer' }}
+                                />
+                            </div>
+                            <button className="btn" style={{ background: 'var(--color-success)', padding: '0.25rem 0.5rem', minWidth: '32px' }} onClick={handleTransferSubmit}>
                                 ✓
                             </button>
+                        </div>
+                        <div style={{ textAlign: 'right', marginTop: '4px', fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)' }}>
+                            Max: {formatCurrency(maxTransferableAmount)}
                         </div>
                     </div>
                 ) : (

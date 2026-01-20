@@ -1,0 +1,11 @@
+🔎 Optimization Start: Running 20 sims per configuration...
+Saving report to: A:\Retirement simulator game\analysis-reports\baseline_comparison_1768892818665.txt
+
+🏆 STRATEGY COMPARISON RESULTS 🏆
+-------------------------------------------------------------------------------------
+| Strategy          | Start Alloc      | Survival Rate | Median Years | Worst 10% |
+-------------------------------------------------------------------------------------
+| AI_Max_Survival   | 10%/50%/40%      | 100.0%        | 50           | 50        |
+| GlidePath         | 10%/50%/40%      | 95.0%         | 50           | 50        |
+| Tactical          | 10%/50%/40%      | 90.0%         | 50           | 50        |
+-------------------------------------------------------------------------------------

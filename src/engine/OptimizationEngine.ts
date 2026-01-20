@@ -11,7 +11,7 @@ export class SurvivalOptimizer {
      * @param simulationsPerStrategy Number of simulations to run per candidate allocation (default 50)
      * @param simulationHorizon limit how many years into future we look (default: until end of game)
      */
-    static findOptimalAllocation(currentState: GameState, simulationsPerStrategy: number = 20, _simulationHorizon?: number): number[] {
+    static findOptimalAllocation(currentState: GameState, simulationsPerStrategy: number = 5, _simulationHorizon?: number): number[] {
         console.log(`[Optimizer] Starting Monte Carlo optimization for Year ${currentState.currentYear}`);
         const candidates = this.generateCandidateAllocations(currentState);
         let bestCandidate = candidates[0];
@@ -144,11 +144,77 @@ export class SurvivalOptimizer {
                     score -= excess * 30; // Penalty for Hoarding (was 50)
                 }
 
+                // --- HARD CONSTRAINT: EQUITY VS SAFETY (USER DEFINED TIERS) ---
+                // Rule: "Equity should NEVER be more than 90%, or less than 10%"
+                // Tiers:
+                // < 3 Years Safe: Max 30% Equity
+                // 3-5 Years Safe: Max 40% Equity
+                // 5-7 Years Safe: Max 50% Equity
+                // 7-10 Years Safe: Max 60% Equity
+                // 10-12 Years Safe: Max 70% Equity
+                // 12-15 Years Safe: Max 80% Equity
+                // 15+ Years Safe: Max 90% Equity
+
+                const yearsOfSafety = projectedSafe / currentExpenses;
+                let maxEquityAllowed = 0.50;
+
+                if (yearsOfSafety >= 15) maxEquityAllowed = 0.90;      // 15+ Years -> Max 90%
+                else if (yearsOfSafety >= 12) maxEquityAllowed = 0.80; // 12-15 Years -> Max 80%
+                else if (yearsOfSafety >= 10) maxEquityAllowed = 0.70; // 10-12 Years -> Max 70%
+                else if (yearsOfSafety >= 7) maxEquityAllowed = 0.60; // 7-10 Years -> Max 60%
+                else if (yearsOfSafety >= 5) maxEquityAllowed = 0.50; // 5-7 Years -> Max 50%
+                else if (yearsOfSafety >= 3) maxEquityAllowed = 0.40; // 3-5 Years -> Max 40%
+                else maxEquityAllowed = 0.30;                          // < 3 Years -> Max 30%
+
+                // Enforce Max Equity
+                if (alloc[2] > maxEquityAllowed) {
+                    const excess = alloc[2] - maxEquityAllowed;
+                    const penalty = excess * 2000; // Severe penalty
+                    score -= penalty;
+                }
+
+                // Enforce Min Equity (10%) - "Never less than 10%"
+                if (alloc[2] < 0.10) {
+                    const deficit = 0.10 - alloc[2];
+                    score -= deficit * 2000; // Severe penalty
+                }
+
                 // --- RICH MODE (War Chest) ---
                 // If we are in the "Comfort Zone" (Safe > 4 years AND < 8 years)
                 const comfortZoneStart = currentExpenses * 4.0;
                 if (projectedSafe > comfortZoneStart && projectedSafe < hardRoofSafe) {
                     score += 20; // (was 50)
+                }
+
+                // --- MEAN REVERSION / SEQUENCE OF RETURN PROBABILITY ---
+                // "Probability of positive returns increases with each NEGATIVE year, and vice versa"
+                // We calculate a synthetic "Reversion Score" from history.
+                // Approach: Look at last 5 years.
+                // - For each Negative year, add +1 (Expect bounce)
+                // - For each Positive year, sub -1 (Expect correction)
+                // - Weight recent years more? No, simple count is robust enough.
+
+                let reversionScore = 0;
+                const recentHistory = currentState.history.slice(-5); // Last 5 years
+                recentHistory.forEach(h => {
+                    const marketRet = h.buckets[2].lastYearReturn; // Growth bucket return
+                    if (marketRet < 0) reversionScore += 1;
+                    else if (marketRet > 0.15) reversionScore -= 1; // Only penalize "Good" years, not flat ones
+                });
+
+                // Apply Reversion Logic to Score
+                // If Reversion Score is POSITIVE (Expect Bounce) -> Favor Equity (Alloc[2])
+                // If Reversion Score is NEGATIVE (Expect Crash)  -> Favor Safety (Alloc[0]+Alloc[1])
+
+                // CAP the Bonus so it doesn't override safety constraints!
+                const cappedBoost = Math.min(20, Math.abs(reversionScore) * 10);
+
+                if (reversionScore > 0) {
+                    // We expect a bounce. Boost Equity.
+                    score += alloc[2] * cappedBoost;
+                } else if (reversionScore < 0) {
+                    // We expect a correction. Penalize Equity (or Boost Safety).
+                    score -= alloc[2] * cappedBoost;
                 }
             } // End of Sovereign Strategy
 

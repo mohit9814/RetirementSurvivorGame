@@ -74,6 +74,51 @@ export function simulateNextYearPhysics(
     }
 
     // 4. Withdraw Expenses
+    // Strategy Update: "Whenever there are below average returns in bucket 2 or bucket 3, please do not inflate the withdrawals for that year"
+    const b2Ret = bucketsAfterReturn[1].lastYearReturn;
+    const b3Ret = bucketsAfterReturn[2].lastYearReturn;
+
+    // Check against Expected Returns from Config (Weighted Approach)
+    // Old Logic: (B2 < Exp || B3 < Exp) -> Too aggressive.
+    // New Logic: Check if Combined Investment Performance (B2+B3) is below Combined Expectation.
+    // This allows a Boom in B3 to carry a Lag in B2, and vice versa.
+
+    const b1Start = currentState.buckets[0].balance;
+    const b2Start = currentState.buckets[1].balance;
+    const b3Start = currentState.buckets[2].balance;
+
+    // We strictly look at B2 and B3 for "Portfolio Performance" signal
+    const b2ActualGain = b2Start * b2Ret;
+    const b3ActualGain = b3Start * b3Ret;
+    const totalActualGain = b2ActualGain + b3ActualGain;
+
+    // Check against Expected Returns from Config
+    const b2Exp = currentState.config.bucketConfigs[1].expectedReturn;
+    const b3Exp = currentState.config.bucketConfigs[2].expectedReturn;
+
+    const b2ExpectedGain = b2Start * b2Exp;
+    const b3ExpectedGain = b3Start * b3Exp;
+    const totalExpectedGain = b2ExpectedGain + b3ExpectedGain;
+
+    let adjustedExpenses = currentExpenses;
+
+    // Only cut spending if the TOTAL weighted gain is less than expected
+    // AND the total portfolio return wasn't massive (e.g. if we made > 12% overall, don't cut regardless of expectation)
+    const portfolioSimpleReturn = (b1Start + b2Start + b3Start) > 0 ? (totalActualGain + (b1Start * bucketsAfterReturn[0].lastYearReturn)) / (b1Start + b2Start + b3Start) : 0;
+
+    // Check for "Austerity Fatigue": Max 2 consecutive years of cuts allowed.
+    let consecutiveSkips = 0;
+    for (let i = currentState.history.length - 1; i >= 0; i--) {
+        if (currentState.history[i].spendingCutApplied) consecutiveSkips++;
+        else break;
+    }
+
+    if (consecutiveSkips < 2 && totalActualGain < totalExpectedGain && portfolioSimpleReturn < 0.12) {
+        // Remove THIS year's inflation (Stay nominal)
+        adjustedExpenses = currentExpenses / (1 + currentState.config.inflationRate);
+        // console.log(`[Physics] Performance Lag (Act: ${(totalActualGain/100000).toFixed(2)}L vs Exp: ${(totalExpectedGain/100000).toFixed(2)}L). Skipping Inflation.`);
+    }
+
     // Flexible Spending Experiment: Cut expenses if Growth bucket tanks.
     const growthRet = bucketsAfterReturn[2].lastYearReturn;
     let flexCut = 0;
@@ -85,7 +130,8 @@ export function simulateNextYearPhysics(
         // console.log(`[Physics] Market Down (${(growthRet*100).toFixed(1)}%), cutting expenses by ${(flexCut*100).toFixed(0)}%`);
     }
 
-    let pendingExpenses = currentExpenses * (1 - flexCut);
+    // Apply cuts to the POSSIBLY non-inflated amount
+    let pendingExpenses = adjustedExpenses * (1 - flexCut);
     let gameOverReason: string | undefined = undefined;
 
     if (bucketsAfterReturn[0].balance >= pendingExpenses) {
@@ -142,11 +188,12 @@ export function simulateNextYearPhysics(
     return {
         buckets: bucketsAfterReturn,
         totalWealth,
-        expensesPaid: currentExpenses - pendingExpenses,
+        expensesPaid: adjustedExpenses - pendingExpenses,
         inflationMultiplier,
         portfolioReturn,
         totalTax,
         gameOverReason,
-        generatedReturns
+        generatedReturns,
+        spendingCutApplied: adjustedExpenses < currentExpenses
     };
 }

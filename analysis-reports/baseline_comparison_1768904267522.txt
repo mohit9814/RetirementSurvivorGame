@@ -1,0 +1,29 @@
+=====================================================================================
+🚀 HIGH FIDELITY STRATEGY BASELINE RUN
+=====================================================================================
+Date: 2026-01-20T10:17:47.525Z
+Simulations per Strategy: 500
+--- PARAMETERS ---
+Initial Corpus:   4.50 Cr
+Annual Expenses:  10.00 Lakhs
+Survival Horizon: 50 Years
+Inflation Rate:   7.0%
+-------------------------------------------------------------------------------------
+
+🏆 ALLOCATION SENSITIVITY MATRIX 🏆
+-----------------------------------------------------------------------------------------------
+| Strategy          | Allocation          | Survival Rate | Median Years | Worst 10% |
+-----------------------------------------------------------------------------------------------
+| GlidePath         | Conserv (5/65/30)   | 98.0%         | 50           | 50        |
+| GlidePath         | Growth (5/35/60)    | 98.0%         | 50           | 50        |
+| AI_Max_Survival   | Growth (5/35/60)    | 98.0%         | 50           | 50        |
+| AI_Max_Survival   | Conserv (5/65/30)   | 96.0%         | 50           | 50        |
+| FixedAllocation   | Growth (5/35/60)    | 96.0%         | 50           | 50        |
+| GlidePath         | Balanced (10/50/40) | 92.0%         | 50           | 50        |
+| AI_Max_Survival   | Balanced (10/50/40) | 92.0%         | 50           | 50        |
+| RefillBucket1     | Conserv (5/65/30)   | 88.0%         | 50           | 47        |
+| FixedAllocation   | Balanced (10/50/40) | 88.0%         | 50           | 49        |
+| FixedAllocation   | Conserv (5/65/30)   | 86.0%         | 50           | 47        |
+| RefillBucket1     | Balanced (10/50/40) | 80.0%         | 50           | 46        |
+| RefillBucket1     | Growth (5/35/60)    | 78.0%         | 50           | 41        |
+-----------------------------------------------------------------------------------------------

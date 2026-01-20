@@ -268,6 +268,7 @@ function App() {
                           totalWealth={gameState.history[gameState.currentYear]?.totalWealth || 0}
                           isTransferSource={transferSource === index}
                           isTransferTarget={transferSource !== null && transferSource !== index}
+                          maxTransferableAmount={transferSource !== null ? gameState.buckets[transferSource].balance : 0}
                           onTransferInitiate={() => handleTransferInitiate(index)}
                           onTransferComplete={(amount) => handleTransferComplete(index, amount)}
                         />
@@ -358,13 +359,14 @@ function App() {
                                 <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>B2 %</th>
                                 <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>B3 %</th>
                                 <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>Tax</th>
+                                <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>Inflation</th>
                                 <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>Drawdown</th>
                                 <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>Wealth</th>
                               </tr>
                             </thead>
                             <tbody>
                               {gameState.history.length === 1 &&
-                                <tr><td colSpan={7} style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-secondary)' }}>Simulation Initialized.</td></tr>
+                                <tr><td colSpan={8} style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-secondary)' }}>Simulation Initialized.</td></tr>
                               }
                               {[...gameState.history].reverse().map((h) => (
                                 <tr key={h.year} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: h.marketEvent ? 'rgba(234, 179, 8, 0.05)' : 'transparent' }}>
@@ -379,13 +381,20 @@ function App() {
                                     );
                                   })}
                                   <td style={{ padding: '0.5rem', color: '#fb923c' }}>
-                                    {h.taxPaid > 0 ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0, notation: 'compact' }).format(h.taxPaid) : '-'}
+                                    {h.taxPaid > 0 ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2, notation: 'compact' }).format(h.taxPaid) : '-'}
+                                  </td>
+                                  <td style={{ padding: '0.5rem', fontSize: '0.75rem' }}>
+                                    {h.spendingCutApplied ? (
+                                      <span style={{ color: 'var(--color-warning)', border: '1px solid var(--color-warning)', padding: '1px 4px', borderRadius: '4px' }}>SKIPPED</span>
+                                    ) : (
+                                      <span style={{ opacity: 0.5 }}>Standard</span>
+                                    )}
                                   </td>
                                   <td style={{ padding: '0.5rem' }}>
-                                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0, notation: 'compact' }).format(h.withdrawn)}
+                                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2, notation: 'compact' }).format(h.withdrawn)}
                                   </td>
                                   <td style={{ padding: '0.5rem', fontWeight: 600 }}>
-                                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0, notation: 'compact' }).format(h.totalWealth)}
+                                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2, notation: 'compact' }).format(h.totalWealth)}
                                   </td>
                                 </tr>
                               ))}

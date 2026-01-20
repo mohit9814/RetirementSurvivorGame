@@ -132,7 +132,8 @@ export function advanceYear(currentState: GameState, expensesOverride?: number):
             inflation: physicsResult.inflationMultiplier,
             portfolioReturn: physicsResult.portfolioReturn,
             taxPaid: physicsResult.totalTax,
-            marketEvent: getMarketEventDescription(physicsResult.buckets[2].lastYearReturn)
+            marketEvent: getMarketEventDescription(physicsResult.buckets[2].lastYearReturn),
+            spendingCutApplied: physicsResult.spendingCutApplied
         }],
         isGameOver: !!physicsResult.gameOverReason,
         gameOverReason: physicsResult.gameOverReason,
