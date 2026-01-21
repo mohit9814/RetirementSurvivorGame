@@ -17,7 +17,9 @@ const createMockState = (strategy: string, buckets: number[], overrides: any = {
 
     return {
         currentYear: 0,
-        currentAge: 60,
+        startYear: 2024,      // Added
+        maxYears: 40,         // Added
+        sessionId: 'test-session', // Added
         isGameOver: false,
         buckets: bucketStates,
         history: [],
@@ -79,7 +81,7 @@ describe('Strategy Engine: Rebalancing Logic', () => {
             // - Policy says: <3 Years safety => Max Equity 50%
             // - Current: 100% Equity (Drifted)
 
-            const expenses = 1200000;
+            // const expenses = 1200000; // Removed unused var
             // B1=0, B2=0, B3=1Cr (100% Equity)
             const state = createMockState('Custom', [0, 0, 10000000], {
                 customStrategy: {
