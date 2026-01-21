@@ -10,10 +10,7 @@ interface GenieNotificationProps {
 }
 
 const GenieNotification: React.FC<GenieNotificationProps> = ({ latestMoves, year, speed, showInterventions = true }) => {
-    // Only render if enabled and we have moves
-    if (!showInterventions || !latestMoves || latestMoves.length === 0) return null;
-
-    // Responsive Check
+    // Responsive Check (Moved up to fix Rules of Hooks)
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
     useEffect(() => {
@@ -25,18 +22,25 @@ const GenieNotification: React.FC<GenieNotificationProps> = ({ latestMoves, year
     const [isVisible, setIsVisible] = useState(true);
 
     // Reset visibility when year changes
-    // Reset visibility when year changes
     useEffect(() => {
         setIsVisible(true);
         // Auto-dismiss based on speed, but minimum 3s to be readable
         const duration = Math.max(3000, speed * 5);
         const timer = setTimeout(() => setIsVisible(false), duration);
         return () => clearTimeout(timer);
-    }, [year]);
+    }, [year, speed]); // Added speed to dependency
+
+    // Logic Checks
+    // 1. Global switch or no data
+    if (!showInterventions || !latestMoves || latestMoves.length === 0) return null;
+
+    // 2. Mobile fast-forward optimization (User Request: "keeps showing up")
+    if (isMobile && speed < 1000) return null;
+
+    // 3. User dismissed or timed out
+    if (!isVisible) return null;
 
     const handleDismiss = () => setIsVisible(false);
-
-    if (!isVisible) return null;
 
     // Unified Card UI for both Desktop and Mobile
     return (

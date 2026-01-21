@@ -11,11 +11,11 @@ export class SurvivalOptimizer {
      * @param simulationsPerStrategy Number of simulations to run per candidate allocation (default 50)
      * @param simulationHorizon limit how many years into future we look (default: until end of game)
      */
-    static findOptimalAllocation(currentState: GameState, simulationsPerStrategy: number = 5, _simulationHorizon?: number): number[] {
+    static findOptimalAllocation(currentState: GameState, simulationsPerStrategy: number = 5, _simulationHorizon?: number, overrides?: import("../types").RebalancingParams): number[] {
         console.log(`[Optimizer] Starting Monte Carlo optimization for Year ${currentState.currentYear}`);
         const candidates = this.generateCandidateAllocations(currentState);
         let bestCandidate = candidates[0];
-        let bestScore = -1;
+        let bestScore = -Infinity; // Fix: Allow negative scores (Hoarding Penalty can create negative valid scores)
 
         // Calculate Current Allocation
         const totalWealth = currentState.buckets.reduce((sum, b) => sum + b.balance, 0);
@@ -31,8 +31,11 @@ export class SurvivalOptimizer {
 
         // Calculate Expense Requirements (Safety Floor)
         const currentExpenses = currentState.config.initialExpenses * Math.pow(1 + currentState.config.inflationRate, currentState.currentYear);
-        const reqB1 = currentExpenses * 2; // 2 Years in Cash
-        const reqB2 = currentExpenses * 4; // 4 Years in Income
+
+        // Custom Safety: Default 6 years (2 Cash, 4 Income)
+        const targetSafeYears = overrides?.aiSafeYears ?? 6;
+        const reqB1 = currentExpenses * (targetSafeYears * 0.33);
+        const reqB2 = currentExpenses * (targetSafeYears * 0.67);
         const totalReq = reqB1 + reqB2;
 
         // Generate "Safety First" Candidate (Explicitly satisfy user constraints)
@@ -156,27 +159,46 @@ export class SurvivalOptimizer {
                 // 15+ Years Safe: Max 90% Equity
 
                 const yearsOfSafety = projectedSafe / currentExpenses;
-                let maxEquityAllowed = 0.50;
+                const globalMaxEquity = overrides?.aiMaxEquity ?? 0.9;
 
-                if (yearsOfSafety >= 15) maxEquityAllowed = 0.90;      // 15+ Years -> Max 90%
-                else if (yearsOfSafety >= 12) maxEquityAllowed = 0.80; // 12-15 Years -> Max 80%
-                else if (yearsOfSafety >= 10) maxEquityAllowed = 0.70; // 10-12 Years -> Max 70%
-                else if (yearsOfSafety >= 7) maxEquityAllowed = 0.60; // 7-10 Years -> Max 60%
-                else if (yearsOfSafety >= 5) maxEquityAllowed = 0.50; // 5-7 Years -> Max 50%
-                else if (yearsOfSafety >= 3) maxEquityAllowed = 0.40; // 3-5 Years -> Max 40%
-                else maxEquityAllowed = 0.30;                          // < 3 Years -> Max 30%
+                // Granular AI Policy
+                // Defaults match the "Standard" AI behavior
+                const policy = overrides?.aiPolicy || {
+                    lt3: 0.30,
+                    t3to5: 0.40,
+                    t5to7: 0.50,
+                    t7to10: 0.60,
+                    t10to12: 0.70,
+                    t12to15: 0.80,
+                    gt15: 0.90
+                };
+
+                let maxEquityAllowed = 0.50; // Fallback
+
+                if (yearsOfSafety >= 15) maxEquityAllowed = policy.gt15;
+                else if (yearsOfSafety >= 12) maxEquityAllowed = policy.t12to15;
+                else if (yearsOfSafety >= 10) maxEquityAllowed = policy.t10to12;
+                else if (yearsOfSafety >= 7) maxEquityAllowed = policy.t7to10;
+                else if (yearsOfSafety >= 5) maxEquityAllowed = policy.t5to7;
+                else if (yearsOfSafety >= 3) maxEquityAllowed = policy.t3to5;
+                else maxEquityAllowed = policy.lt3;
+
+                // Cap at User Defined Max
+                maxEquityAllowed = Math.min(maxEquityAllowed, globalMaxEquity);
 
                 // Enforce Max Equity
                 if (alloc[2] > maxEquityAllowed) {
                     const excess = alloc[2] - maxEquityAllowed;
-                    const penalty = excess * 2000; // Severe penalty
+                    const penalty = excess * 1000000;
                     score -= penalty;
+                    // console.log(`   -> [Constraint] MaxEq Violation: ${alloc[2].toFixed(2)} > ${maxEquityAllowed.toFixed(2)}. Penalty: ${penalty.toFixed(0)}`);
                 }
 
-                // Enforce Min Equity (10%) - "Never less than 10%"
-                if (alloc[2] < 0.10) {
-                    const deficit = 0.10 - alloc[2];
-                    score -= deficit * 2000; // Severe penalty
+                // Enforce Min Equity
+                const globalMinEquity = overrides?.aiMinEquity ?? 0.10;
+                if (alloc[2] < globalMinEquity) {
+                    const deficit = globalMinEquity - alloc[2];
+                    score -= deficit * 1000000;
                 }
 
                 // --- RICH MODE (War Chest) ---
@@ -256,6 +278,11 @@ export class SurvivalOptimizer {
         candidates.push([0.15, 0.55, 0.30]);
         candidates.push([0.20, 0.50, 0.30]);
         candidates.push([0.20, 0.60, 0.20]);
+
+        // Aggressive / Freedom Mode Candidates (High Equity)
+        candidates.push([0.05, 0.15, 0.80]); // 80% Equity
+        candidates.push([0.05, 0.05, 0.90]); // 90% Equity
+        candidates.push([0.00, 0.00, 1.00]); // 100% Equity (Risk On)
 
         // GlidePath-Aligned Candidate:
         // Uses YEARS REMAINING (matches actual GlidePath strategy)

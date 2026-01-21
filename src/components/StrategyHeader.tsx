@@ -8,6 +8,8 @@ interface StrategyHeaderProps {
     disabled?: boolean;
 }
 
+import { CustomStrategyBuilder } from './CustomStrategyBuilder';
+
 const STRATEGIES: Record<string, { label: string, desc: string, shortDesc: string }> = {
     'None': {
         label: 'Do Nothing (Harvest Only)',
@@ -38,12 +40,25 @@ const STRATEGIES: Record<string, { label: string, desc: string, shortDesc: strin
         label: 'AI Smart Patience',
         desc: 'Uses Monte Carlo simulations to find the safest path. Can "Do Nothing" if safe, or switch gears in a crisis. Tuned to avoid unnecessary taxes.',
         shortDesc: 'AI Optimizer'
+    },
+    'Custom': {
+        label: 'Custom Strategy',
+        desc: 'Your rules, your outcomes. Tweak base parameters to find the perfect edge.',
+        shortDesc: 'Custom Rules'
     }
 };
 
-export const StrategyHeader: React.FC<StrategyHeaderProps> = ({ currentStrategy, onStrategyChange, disabled }) => {
+interface StrategyHeaderProps {
+    currentStrategy: GameConfig['rebalancingStrategy'];
+    customStrategyConfig?: GameConfig['customStrategy']; // Add this prop
+    onStrategyChange: (strategy: GameConfig['rebalancingStrategy'], customConfig?: GameConfig['customStrategy']) => void; // Update signature
+    disabled?: boolean;
+}
+
+export const StrategyHeader: React.FC<StrategyHeaderProps> = ({ currentStrategy, customStrategyConfig, onStrategyChange, disabled }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [showInfo, setShowInfo] = useState(false);
+    const [showBuilder, setShowBuilder] = useState(false);
 
     const info = STRATEGIES[currentStrategy] || { label: currentStrategy, desc: 'Custom Strategy', shortDesc: 'Custom' };
 
@@ -69,27 +84,53 @@ export const StrategyHeader: React.FC<StrategyHeaderProps> = ({ currentStrategy,
                     textOverflow: 'ellipsis'
                 }}
             >
-                {/* On mobile, we might want just "Strategy" or a shorter name. 
-                    For now, enforcing ellipsis and max-width. */}
                 <span className="strategy-label-text">{info.label}</span>
                 {!disabled && <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>▼</span>}
             </div>
 
-            {/* Info Icon */}
-            <div
-                onMouseEnter={() => setShowInfo(true)}
-                onMouseLeave={() => setShowInfo(false)}
-                style={{
-                    cursor: 'help',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: '18px', height: '18px', borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.7rem', fontWeight: 'bold'
-                }}
-            >
-                i
-            </div>
+            {/* Info / Edit Icon */}
+            {currentStrategy === 'Custom' ? (
+                <div
+                    onClick={() => onStrategyChange('Custom', customStrategyConfig)}
+                    // Note: In App.tsx we will detect if onStrategyChange is called with 'Custom' to open the builder
+                    // Actually, let's keep it simple. If click gear, just trigger the parent.
+                    // But we don't have a separate prop yet.
+                    // Let's rely on the parent checking if 'Custom' is selected to show the builder?
+                    // No, that's annoying effectively. 
+                    // Let's use the onStrategyChange callback. If the user clicks the gear, 
+                    // we re-select 'Custom', which is benign.
+                    // BUT we want to force open the editor.
+                    style={{
+                        cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: '20px', height: '20px', borderRadius: '50%',
+                        background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', fontSize: '0.8rem'
+                    }}
+                >
+                    ⚙️
+                </div>
+            ) : (
+                <div
+                    onMouseEnter={() => setShowInfo(true)}
+                    onMouseLeave={() => setShowInfo(false)}
+                    style={{
+                        cursor: 'help',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: '18px', height: '18px', borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.7rem', fontWeight: 'bold'
+                    }}
+                >
+                    i
+                </div>
+            )}
+
 
             {/* Dropdown Menu */}
+            {/* Note: This might still be clipped if inside transform, but it's less critical than the full screen modal. 
+                Ideally we lift this too, but let's fix the modal first. 
+                Actually, for the dropdown to work inside transform, we need Portal or fixed pos workaround.
+                Let's leave it for now, user complained about "Custom Strategy Popup" not menu.
+            */}
             {showMenu && (
                 <>
                     <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => setShowMenu(false)} />

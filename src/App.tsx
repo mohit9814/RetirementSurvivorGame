@@ -10,8 +10,10 @@ import BucketStackChart from './components/BucketStackChart';
 import ExpenseReveal from './components/ExpenseReveal';
 import WelcomeScreen from './components/WelcomeScreen';
 import Leaderboard from './components/Leaderboard';
-import GenieNotification from './components/GenieNotification';
+
+import { ChallengeModal } from './components/ChallengeModal';
 import ComparisonChart from './components/ComparisonChart';
+
 import { StrategyHeader } from './components/StrategyHeader';
 import MissionLog from './components/MissionLog';
 import StrategyIntel from './components/StrategyIntel';
@@ -19,6 +21,7 @@ import { saveGameResult, calculateScore } from './utils/storage';
 import { formatCurrency } from './utils/currency';
 import type { GameConfig, LeaderboardEntry } from './types';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { CustomStrategyBuilder } from './components/CustomStrategyBuilder';
 
 function App() {
   console.log("DEBUG: App Component Rendering");
@@ -37,6 +40,7 @@ function App() {
   const [chartMode, setChartMode] = useState<'wealth' | 'buckets' | 'allocation' | 'comparison'>('wealth');
   const [viewMode, setViewMode] = useState<'visuals' | 'data' | 'intel'>('visuals');
   const [isInspecting, setIsInspecting] = useState(false); // New state for Game Over inspection
+  const [showCustomBuilder, setShowCustomBuilder] = useState(false);
 
   // Use the game hook
   const { gameState, nextYear, transfer, restartGame, updateConfig, playback } = useGame();
@@ -161,12 +165,7 @@ function App() {
             <WelcomeScreen onStart={setUsername} />
           ) : (
             <>
-              <GenieNotification
-                latestMoves={gameState.history[gameState.history.length - 1]?.rebalancingMoves}
-                year={gameState.currentYear}
-                speed={speed}
-                showInterventions={gameState.config.showInterventionPopups}
-              />
+              <ChallengeModal />
 
               <header className="dashboard-header" style={{
                 padding: '0.5rem',
@@ -179,7 +178,7 @@ function App() {
                 gap: '0.5rem'
               }}>
                 {/* Left: Title & Strategy */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                < div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <h1 style={{
                     fontSize: '1.1rem', fontWeight: 700, margin: 0, letterSpacing: '-0.03em',
                     background: 'linear-gradient(to right, #38bdf8, #818cf8)',
@@ -188,18 +187,28 @@ function App() {
                   }} onClick={() => setShowLeaderboard(true)}>
                     <span>🚀</span> Retirement Survivor
                   </h1>
-                  {hasStarted && (
-                    <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
-                      <StrategyHeader
-                        currentStrategy={gameState.config.rebalancingStrategy}
-                        onStrategyChange={(strat) => updateConfig({ ...gameState.config, rebalancingStrategy: strat })}
-                      />
-                    </div>
-                  )}
-                </div>
+                  {
+                    hasStarted && (
+                      <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
+                        <StrategyHeader
+                          currentStrategy={gameState.config.rebalancingStrategy}
+                          customStrategyConfig={gameState.config.customStrategy}
+                          onStrategyChange={(strat, customConfig) => {
+                            updateConfig({
+                              ...gameState.config,
+                              rebalancingStrategy: strat,
+                              customStrategy: customConfig || gameState.config.customStrategy
+                            });
+                            if (strat === 'Custom') setShowCustomBuilder(true);
+                          }}
+                        />
+                      </div>
+                    )
+                  }
+                </div >
 
                 {/* Right: Controls & Menu */}
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginLeft: 'auto' }}>
+                < div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginLeft: 'auto' }}>
 
                   {hasStarted && !gameState.isGameOver && (
                     <div className="control-group" style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '2px' }}>
@@ -234,32 +243,36 @@ function App() {
                     </div>
                   )}
 
-                  {gameState.isGameOver && isInspecting && (
-                    <div style={{ display: 'flex', marginLeft: 'auto' }}>
-                      <button className="btn" onClick={() => setIsInspecting(false)} style={{
-                        background: '#fbbf24', color: '#78350f', padding: '0.5rem 1rem', fontSize: '0.9rem', fontWeight: 700,
-                        boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)'
-                      }}>
-                        🏆 Show Result
-                      </button>
-                    </div>
-                  )}
+                  {
+                    gameState.isGameOver && isInspecting && (
+                      <div style={{ display: 'flex', marginLeft: 'auto' }}>
+                        <button className="btn" onClick={() => setIsInspecting(false)} style={{
+                          background: '#fbbf24', color: '#78350f', padding: '0.5rem 1rem', fontSize: '0.9rem', fontWeight: 700,
+                          boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)'
+                        }}>
+                          🏆 Show Result
+                        </button>
+                      </div>
+                    )
+                  }
 
                   {/* Settings Gear */}
-                  {hasStarted && (
-                    <button
-                      onClick={() => setShowConfig(true)}
-                      className="btn"
-                      style={{ background: 'rgba(255,255,255,0.1)', padding: '0.6rem', color: '#94a3b8', borderRadius: '50%' }}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </header>
+                  {
+                    hasStarted && (
+                      <button
+                        onClick={() => setShowConfig(true)}
+                        className="btn"
+                        style={{ background: 'rgba(255,255,255,0.1)', padding: '0.6rem', color: '#94a3b8', borderRadius: '50%' }}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="3"></circle>
+                          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                      </button>
+                    )
+                  }
+                </div >
+              </header >
 
               {
                 showLeaderboard && (
@@ -382,7 +395,7 @@ function App() {
                       {/* Game Over Overlay */}
                       {gameState.isGameOver && !isInspecting && (
                         <div style={{
-                          position: 'absolute', inset: 0, zIndex: 1000,
+                          position: 'fixed', inset: 0, zIndex: 2000,
                           background: 'rgba(15, 23, 42, 0.85)',
                           backdropFilter: 'blur(10px)',
                           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
@@ -513,18 +526,34 @@ function App() {
                         )}
 
                         {viewMode === 'intel' && (
-                          <StrategyIntel />
+                          <StrategyIntel gameState={gameState} />
                         )}
                       </div>
                     </div>
                   </>
                 )
               }
+
+              {/* Custom Strategy Builder Modal */}
+              {showCustomBuilder && (
+                <CustomStrategyBuilder
+                  initialConfig={gameState.config.customStrategy}
+                  onCancel={() => setShowCustomBuilder(false)}
+                  onSave={(newConfig) => {
+                    updateConfig({
+                      ...gameState.config,
+                      rebalancingStrategy: 'Custom',
+                      customStrategy: newConfig
+                    });
+                    setShowCustomBuilder(false);
+                  }}
+                />
+              )}
             </>
           )
         }
-      </div>
-    </ErrorBoundary>
+      </div >
+    </ErrorBoundary >
   );
 }
 

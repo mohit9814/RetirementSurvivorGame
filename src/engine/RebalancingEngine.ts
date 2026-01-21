@@ -2,10 +2,29 @@ import type { GameState, BucketState } from '../types';
 import { SurvivalOptimizer } from './OptimizationEngine';
 
 export function applyRebalancing(state: GameState): GameState {
+    // Resolve Strategy and Parameters
     const strategy = state.config.rebalancingStrategy;
-    console.log(`[RebalancingEngine] Applying Strategy: ${strategy} | Year: ${state.currentYear}`);
+    let activeStrategy = strategy;
+    // Default Parameters
+    let params = {
+        safetyThresholdYears: (strategy === 'RefillBucket1') ? 2 : 3,
+        maxCashBufferMultiplier: 1.5,
+        tacticalEquityTargetStart: 0.60, // From old code (default B3 alloc approx)
+        tacticalEquityTargetEnd: 0.30,   // From old code (default min)
+        gpStartEquity: 0.70,
+        gpEndEquity: 0.50,
+        gpAggressiveYears: 25,
+        gpConservativeYears: 5
+    };
 
-    if (!strategy || strategy === 'None') return state;
+    // Override if Custom
+    if (strategy === 'Custom' && state.config.customStrategy) {
+        activeStrategy = state.config.customStrategy.baseStrategy;
+        params = { ...params, ...state.config.customStrategy.params };
+        console.log(`[Rebalancing] Custom Override: Base=${activeStrategy}`, params);
+    }
+
+    if (!activeStrategy || activeStrategy === 'None') return state;
 
     let newBuckets = JSON.parse(JSON.stringify(state.buckets)) as BucketState[];
     const totalWealth = newBuckets.reduce((sum, b) => sum + b.balance, 0);
@@ -30,11 +49,11 @@ export function applyRebalancing(state: GameState): GameState {
         }
     };
 
-    if (strategy === 'RefillBucket1') {
+    if (activeStrategy === 'RefillBucket1') {
         const nextYear = state.currentYear + 1;
         const inflationMultiplier = Math.pow(1 + state.config.inflationRate, nextYear);
         const annualExpense = state.config.initialExpenses * inflationMultiplier;
-        const targetB1 = annualExpense * 2;
+        const targetB1 = annualExpense * (params.safetyThresholdYears || 2);
 
         if (newBuckets[0].balance < targetB1) {
             let deficit = targetB1 - newBuckets[0].balance;
@@ -56,15 +75,15 @@ export function applyRebalancing(state: GameState): GameState {
                 logMove(2, 0, take, 'Safety Refill');
             }
         }
-    } else if (strategy === 'Tactical') {
-        const tacticalYears = state.config.tacticalCashBufferYears || 3; // Optimized default: 3 years
+    } else if (activeStrategy === 'Tactical') {
+        const tacticalYears = params.safetyThresholdYears || 3;
 
         // 1. Safety Rule: Ensure B1 has X years of expenses
         const nextYear = state.currentYear + 1;
         const inflationMultiplier = Math.pow(1 + state.config.inflationRate, nextYear);
         const annualExpense = state.config.initialExpenses * inflationMultiplier;
         const targetB1 = annualExpense * tacticalYears;
-        const maxB1 = targetB1 * 1.5; // If B1 holds > 1.5x target, deploy it!
+        const maxB1 = targetB1 * (params.maxCashBufferMultiplier || 1.5);
         console.log(`[Tactical Check] Year: ${state.currentYear} | Expense: ${annualExpense.toFixed(0)} | Target B1 (${tacticalYears}y): ${targetB1.toFixed(0)} | Max B1: ${maxB1.toFixed(0)} | Current B1: ${newBuckets[0].balance.toFixed(0)}`);
 
         if (newBuckets[0].balance < targetB1) {
@@ -102,15 +121,21 @@ export function applyRebalancing(state: GameState): GameState {
             // --- BUCKET 3 (GROWTH) LOGIC ---
             const b3Conf = state.config.bucketConfigs[2];
 
-            // TACTICAL GLIDE PATH: Reduce target equity allocation by 0.5% per year to de-risk
-            // Default Start: 60% (from config). Year 30: 45%.
-            const glidePathDecay = state.currentYear * 0.005;
-            const tacticalTargetAlloc = Math.max(0.30, b3Conf.allocation - glidePathDecay);
+            // TACTICAL GLIDE PATH (Simplified for Custom): Linear decay from Start to End
+            // Default was 0.5% per year.
+            // New logic: Interpolate between params.tacticalEquityTargetStart and params.tacticalEquityTargetEnd over 60 years?
+            // Or just stick to the old logic if params are missing? Let's use the params.
+            const totalDuration = state.config.survivalYears;
+            const progress = Math.min(1, state.currentYear / totalDuration);
+            const startEq = params.tacticalEquityTargetStart || 0.60;
+            const endEq = params.tacticalEquityTargetEnd || 0.30;
+
+            const tacticalTargetAlloc = startEq - ((startEq - endEq) * progress);
 
             const b3CurrentAlloc = newBuckets[2].balance / currentTotal;
             const b3Ret = newBuckets[2].lastYearReturn;
 
-            // A. Profit Skimming: Beating Exp AND Overweight (Relative to NEW Dynamic Target)
+            // A. Profit Skimming: Beating Exp AND Overweight
             if (b3Ret > b3Conf.expectedReturn && b3CurrentAlloc > tacticalTargetAlloc) {
                 const excessRate = b3Ret - b3Conf.expectedReturn;
                 const skimAmount = Math.max(0, newBuckets[2].balance * excessRate);
@@ -118,22 +143,20 @@ export function applyRebalancing(state: GameState): GameState {
                 newBuckets[1].balance += skimAmount;
                 logMove(2, 1, skimAmount, 'Profit Skimming');
             }
-            // B. Buy Low: Below Exp AND Underweight (Relative to NEW Dynamic Target)
+            // B. Buy Low: Below Exp AND Underweight
             else if (b3Ret < b3Conf.expectedReturn && b3CurrentAlloc < tacticalTargetAlloc) {
                 const missingRate = b3Conf.expectedReturn - b3Ret;
                 if (newBuckets[1].balance > 0) {
-                    // Deploy up to 20% of B2 or match the missing return
                     const buyAmount = Math.min(newBuckets[1].balance * 0.2, newBuckets[2].balance * missingRate);
                     newBuckets[1].balance -= buyAmount;
                     newBuckets[2].balance += buyAmount;
                     logMove(1, 2, buyAmount, 'Buy Low Opportunity');
                 }
             }
-            // C. GLIDE PATH ENFORCEMENT: If Equity is WAY above target (>10% deviation), trim it regardless of return
-            // This ensures the Glide Path is respected even in "normal" market years
+            // C. GLIDE PATH ENFORCEMENT
             else if (b3CurrentAlloc > (tacticalTargetAlloc + 0.05)) {
                 const excessAmt = (b3CurrentAlloc - tacticalTargetAlloc) * currentTotal;
-                const trimAmt = excessAmt * 0.5; // Smooth trim (50% of excess)
+                const trimAmt = excessAmt * 0.5;
                 newBuckets[2].balance -= trimAmt;
                 newBuckets[1].balance += trimAmt;
                 logMove(2, 1, trimAmt, 'Glide Path Adjustment');
@@ -144,7 +167,6 @@ export function applyRebalancing(state: GameState): GameState {
             const b2CurrentAlloc = newBuckets[1].balance / currentTotal;
             const b2Ret = newBuckets[1].lastYearReturn;
 
-            // A. Profit Taking: Beating Exp AND Overweight
             if (b2Ret > b2Conf.expectedReturn && b2CurrentAlloc > b2Conf.allocation) {
                 const excessRate = b2Ret - b2Conf.expectedReturn;
                 const skimAmount = Math.max(0, newBuckets[1].balance * excessRate);
@@ -154,16 +176,12 @@ export function applyRebalancing(state: GameState): GameState {
             }
         }
 
-    } else if (strategy === 'GlidePath') {
-        // Glide Path based on YEARS REMAINING (not age)
-        // When yearsRemaining >= 25: 70% equity (aggressive)
-        // When yearsRemaining <= 5: 50% equity (conservative)
-        // Linear interpolation in between
+    } else if (activeStrategy === 'GlidePath') {
         const yearsRemaining = state.config.survivalYears - state.currentYear;
-        const maxEquity = 0.70;
-        const minEquity = 0.50;
-        const aggressiveThreshold = 25; // Years where we're most aggressive
-        const conservativeThreshold = 5; // Years where we're most conservative
+        const maxEquity = params.gpStartEquity || 0.70;
+        const minEquity = params.gpEndEquity || 0.50;
+        const aggressiveThreshold = params.gpAggressiveYears || 25;
+        const conservativeThreshold = params.gpConservativeYears || 5;
 
         let targetEquity: number;
         if (yearsRemaining >= aggressiveThreshold) {
@@ -171,25 +189,21 @@ export function applyRebalancing(state: GameState): GameState {
         } else if (yearsRemaining <= conservativeThreshold) {
             targetEquity = minEquity;
         } else {
-            // Linear interpolation
             const range = aggressiveThreshold - conservativeThreshold;
             const position = yearsRemaining - conservativeThreshold;
             targetEquity = minEquity + (maxEquity - minEquity) * (position / range);
         }
 
-        // Use totalWealth from line 10
         const targetB3Amount = totalWealth * targetEquity;
         const currentB3 = newBuckets[2].balance;
         const diff = currentB3 - targetB3Amount;
 
-        // 1. Rebalance Equity
-        if (diff > 0) { // Too much equity -> Move to Safe
+        if (diff > 0) {
             newBuckets[2].balance -= diff;
             newBuckets[1].balance += diff;
             logMove(2, 1, diff, `Glide Path Adjustment (${(targetEquity * 100).toFixed(1)}%)`);
-        } else if (diff < 0) { // Too little equity -> Buy from Safe
+        } else if (diff < 0) {
             const shortfall = Math.abs(diff);
-            // Use B2 first
             if (newBuckets[1].balance > shortfall) {
                 newBuckets[1].balance -= shortfall;
                 newBuckets[2].balance += shortfall;
@@ -197,14 +211,13 @@ export function applyRebalancing(state: GameState): GameState {
             }
         }
 
-        // 2. Safety Floor (Ensure B1 has 1 year expenses)
+        // 2. Safety Floor
         const nextYear = state.currentYear + 1;
         const inflationMultiplier = Math.pow(1 + state.config.inflationRate, nextYear);
         const annualExpense = state.config.initialExpenses * inflationMultiplier;
 
         if (newBuckets[0].balance < annualExpense) {
             const deficit = annualExpense - newBuckets[0].balance;
-            // Try B2 first
             if (newBuckets[1].balance > deficit) {
                 newBuckets[1].balance -= deficit;
                 newBuckets[0].balance += deficit;
@@ -212,7 +225,7 @@ export function applyRebalancing(state: GameState): GameState {
             }
         }
 
-    } else if (strategy === 'FixedAllocation') {
+    } else if (activeStrategy === 'FixedAllocation') {
 
         const surpluses: { idx: number, amount: number }[] = [];
         const deficits: { idx: number, amount: number }[] = [];
@@ -244,12 +257,13 @@ export function applyRebalancing(state: GameState): GameState {
                 if (dest.amount < 1) deficits.shift();
             }
         });
-    } else if (strategy === 'AI_Max_Survival') {
+    } else if (activeStrategy === 'AI_Max_Survival') {
         // AI Optimization Logic
         try {
             // Lazy load or import at top (assuming import exists)
             // But since this is a pure function file, we rely on imports.
-            const targetAllocations = SurvivalOptimizer.findOptimalAllocation(state);
+            // Pass dynamic 'params' to findOptimalAllocation
+            const targetAllocations = SurvivalOptimizer.findOptimalAllocation(state, 5, undefined, params);
 
             // Rebalance to targetAllocations
             // We do a simple diff and move

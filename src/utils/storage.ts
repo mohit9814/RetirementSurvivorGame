@@ -21,9 +21,10 @@ export const saveGameResult = (entry: LeaderboardEntry): void => {
 
         // Sort by score descending (Primary), then date descending (Secondary)
         updated.sort((a, b) => b.score - a.score || new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        // Keep top 100
-        const top100 = updated.slice(0, 100);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(top100));
+        // Keep top 500 to allow for personal history retention while maintaining a global high score list
+        const limit = 500;
+        const kept = updated.slice(0, limit);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(kept));
     } catch (e) {
         console.error("Failed to save game result", e);
     }

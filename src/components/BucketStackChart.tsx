@@ -183,6 +183,30 @@ const BucketStackChart: React.FC<BucketStackChartProps> = ({ history, survivalYe
                             }}
                         />
                         <ReferenceLine x={currentYear} stroke="var(--color-accent)" strokeDasharray="3 3" />
+
+                        {/* Strategy Change Markers */}
+                        {history.filter(h => h.strategyChange).map((h, idx) => {
+                            const parts = h.strategyChange?.split('➝');
+                            const label = parts && parts.length > 1 ? parts[1].trim() : 'Change';
+                            return (
+                                <ReferenceLine
+                                    key={`strat-${idx}`}
+                                    x={h.year}
+                                    stroke="#ec4899"
+                                    strokeOpacity={0.5}
+                                    strokeWidth={2}
+                                    label={{
+                                        value: label,
+                                        position: 'insideTopLeft',
+                                        fill: '#ec4899',
+                                        fontSize: 10,
+                                        angle: -90,
+                                        offset: 10
+                                    }}
+                                />
+                            );
+                        })}
+
                         <Area
                             type="monotone"
                             dataKey="B3"

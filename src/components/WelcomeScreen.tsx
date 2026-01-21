@@ -36,11 +36,11 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart }) => {
                     </h3>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.85rem' }}>
                         <div>
-                            <div style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Target Success Rate</div>
-                            <div style={{ color: '#fff', fontWeight: 'bold' }}>98.5% <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(Glide Path)</span></div>
+                            <div style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Benchmark Survival</div>
+                            <div style={{ color: '#fff', fontWeight: 'bold' }}>39 Years <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(Glide Path)</span></div>
                         </div>
                         <div>
-                            <div style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Target Wealth</div>
+                            <div style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Legacy Funds</div>
                             <div style={{ color: '#fff', fontWeight: 'bold' }}>₹5.8 Cr <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(Tactical)</span></div>
                         </div>
                     </div>

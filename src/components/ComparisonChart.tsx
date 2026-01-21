@@ -150,6 +150,31 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({ gameState }) => {
                                 isAnimationActive={false} // Disable animation for smoother zooming
                             />
                         ))}
+
+                        {/* Strategy Change Markers - Using gameState.history */}
+                        {gameState.history.filter(h => h.strategyChange).map((h, idx) => {
+                            const parts = h.strategyChange?.split('➝');
+                            const label = parts && parts.length > 1 ? parts[1].trim() : 'Change';
+                            return (
+                                <ReferenceLine
+                                    key={`strat-${idx}`}
+                                    x={h.year}
+                                    stroke="#ec4899"
+                                    strokeOpacity={0.6}
+                                    strokeWidth={1}
+                                    strokeDasharray="4 4"
+                                    label={{
+                                        value: label,
+                                        position: 'insideTopLeft',
+                                        fill: '#ec4899',
+                                        fontSize: 10,
+                                        angle: -90,
+                                        offset: 10
+                                    }}
+                                />
+                            );
+                        })}
+
                     </LineChart>
                 </ResponsiveContainer>
             </div>

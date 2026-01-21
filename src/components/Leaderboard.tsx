@@ -14,7 +14,21 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ currentUsername, onClose }) =
 
     useEffect(() => {
         if (view === 'global') {
-            setEntries(getLeaderboard());
+            const allEntries = getLeaderboard();
+            // Deduplicate: Keep only the best score per username
+            const uniqueEntriesMap = new Map<string, LeaderboardEntry>();
+
+            allEntries.forEach(entry => {
+                const existing = uniqueEntriesMap.get(entry.username);
+                if (!existing || entry.score > existing.score) {
+                    uniqueEntriesMap.set(entry.username, entry);
+                }
+            });
+
+            const sortedUnique = Array.from(uniqueEntriesMap.values())
+                .sort((a, b) => b.score - a.score);
+
+            setEntries(sortedUnique);
         } else if (currentUsername) {
             setEntries(getUserHistory(currentUsername));
         }

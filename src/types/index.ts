@@ -58,10 +58,46 @@ export interface GameConfig {
     survivalYears: number; // Target duration
     enableTaxation: boolean; // Enable/Disable tax simulation
     rebalancingStrategy: 'None' | 'RefillBucket1' | 'Tactical' | 'GlidePath' | 'FixedAllocation' | 'AI_Max_Survival' | 'Custom';
-    customRebalancingTargetYears?: number; // For Custom Strategy
-    tacticalCashBufferYears?: number; // For Tactical Strategy (Safety)
+    customStrategy?: CustomStrategyConfig; // Configuration for Custom Strategy
     showInterventionPopups?: boolean; // Toggle for AI/Strategy notifications
     bucketConfigs: BucketConfig[];
+}
+
+export interface CustomStrategyConfig {
+    baseStrategy: 'RefillBucket1' | 'Tactical' | 'GlidePath' | 'FixedAllocation';
+    params: RebalancingParams;
+}
+
+export interface AIPolicyConfig {
+    lt3: number;      // < 3 Years
+    t3to5: number;    // 3 - 5 Years
+    t5to7: number;    // 5 - 7 Years
+    t7to10: number;   // 7 - 10 Years
+    t10to12: number;  // 10 - 12 Years
+    t12to15: number;  // 12 - 15 Years
+    gt15: number;     // 15+ Years
+}
+
+export interface RebalancingParams {
+    // Common / Refill / Tactical
+    safetyThresholdYears?: number; // e.g. 2 or 3
+
+    // Tactical Specific
+    maxCashBufferMultiplier?: number; // e.g. 1.5
+    tacticalEquityTargetStart?: number; // e.g. 0.60
+    tacticalEquityTargetEnd?: number; // e.g. 0.30
+
+    // Glide Path Specific
+    gpStartEquity?: number; // e.g. 0.70
+    gpEndEquity?: number; // e.g. 0.50
+    gpAggressiveYears?: number; // e.g. 25
+    gpConservativeYears?: number; // e.g. 5
+
+    // AI / Custom Params
+    aiSafeYears?: number;
+    aiMaxEquity?: number;
+    aiMinEquity?: number;
+    aiPolicy?: AIPolicyConfig; // Granular Policy
 }
 
 export interface LeaderboardEntry {
