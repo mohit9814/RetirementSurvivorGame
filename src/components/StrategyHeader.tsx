@@ -2,13 +2,9 @@
 import React, { useState } from 'react';
 import type { GameConfig } from '../types';
 
-interface StrategyHeaderProps {
-    currentStrategy: GameConfig['rebalancingStrategy'];
-    onStrategyChange: (strategy: GameConfig['rebalancingStrategy']) => void;
-    disabled?: boolean;
-}
 
-import { CustomStrategyBuilder } from './CustomStrategyBuilder';
+
+
 
 const STRATEGIES: Record<string, { label: string, desc: string, shortDesc: string }> = {
     'None': {
@@ -50,15 +46,15 @@ const STRATEGIES: Record<string, { label: string, desc: string, shortDesc: strin
 
 interface StrategyHeaderProps {
     currentStrategy: GameConfig['rebalancingStrategy'];
-    customStrategyConfig?: GameConfig['customStrategy']; // Add this prop
-    onStrategyChange: (strategy: GameConfig['rebalancingStrategy'], customConfig?: GameConfig['customStrategy']) => void; // Update signature
+    customStrategyConfig?: GameConfig['customStrategy'];
+    onStrategyChange: (strategy: GameConfig['rebalancingStrategy'], customConfig?: GameConfig['customStrategy']) => void;
     disabled?: boolean;
 }
 
 export const StrategyHeader: React.FC<StrategyHeaderProps> = ({ currentStrategy, customStrategyConfig, onStrategyChange, disabled }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [showInfo, setShowInfo] = useState(false);
-    const [showBuilder, setShowBuilder] = useState(false);
+    // const [showBuilder, setShowBuilder] = useState(false); // Removed unused
 
     const info = STRATEGIES[currentStrategy] || { label: currentStrategy, desc: 'Custom Strategy', shortDesc: 'Custom' };
 

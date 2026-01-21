@@ -46,7 +46,7 @@ export const CustomStrategyBuilder: React.FC<CustomStrategyBuilderProps> = ({ in
         aiMinEquity: 0.1
     });
 
-    const updateParam = (key: keyof RebalancingParams, value: number) => {
+    const updateParam = (key: keyof RebalancingParams, value: any) => {
         setParams(prev => ({ ...prev, [key]: value }));
     };
 
@@ -267,7 +267,7 @@ export const CustomStrategyBuilder: React.FC<CustomStrategyBuilderProps> = ({ in
                                                                 lt3: 0.3, t3to5: 0.4, t5to7: 0.5, t7to10: 0.6,
                                                                 t10to12: 0.7, t12to15: 0.8, gt15: 0.9
                                                             };
-                                                            updateParam('aiPolicy', { ...curPolicy, [tier.k]: newVal });
+                                                            updateParam('aiPolicy', { ...curPolicy, [tier.k]: newVal } as any);
                                                         }}
                                                         style={{ width: '100%', accentColor: '#38bdf8' }}
                                                     />

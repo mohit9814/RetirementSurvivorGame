@@ -87,7 +87,7 @@ export const RollingReturnsChart: React.FC<RollingReturnsChartProps> = ({ histor
                         }}
                         itemStyle={{ fontSize: '12px' }}
                         labelStyle={{ color: '#94a3b8', marginBottom: '0.5rem' }}
-                        formatter={(value: number) => [`${value.toFixed(2)}%`, '']}
+                        formatter={(value: number | undefined) => [value ? `${value.toFixed(2)}%` : '-', '']}
                     />
                     <Legend iconType="circle" />
                     <Line

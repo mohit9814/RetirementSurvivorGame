@@ -7,6 +7,7 @@ const createMockState = (strategy: string, buckets: number[], overrides: any = {
     const totalWealth = buckets.reduce((a, b) => a + b, 0);
     const bucketStates: BucketState[] = buckets.map((b, i) => ({
         id: `B${i + 1}`,
+        type: i === 0 ? 'Cash' : i === 1 ? 'Income' : 'Growth', // Added missing type
         name: i === 0 ? 'Cash' : i === 1 ? 'Income' : 'Growth',
         balance: b,
         allocation: 0, // Not used directly in logic often, mainly derived

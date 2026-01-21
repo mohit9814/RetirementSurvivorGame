@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Brush, CartesianGrid } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Brush, CartesianGrid, ReferenceLine } from 'recharts';
 import type { GameState } from '../types';
 
 interface ComparisonChartProps {

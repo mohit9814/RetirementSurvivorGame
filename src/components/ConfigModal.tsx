@@ -160,39 +160,15 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ config, isOpen, onClose, onSa
                         )}
                         {localConfig.rebalancingStrategy === 'Custom' && (
                             <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
-                                <label style={{ display: 'block', marginBottom: '0.25rem' }}>Target Cash Buffer (Years)</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <input
-                                        type="range" min="0.5" max="20" step="0.5"
-                                        value={localConfig.customRebalancingTargetYears || 2}
-                                        onChange={(e) => setLocalConfig({ ...localConfig, customRebalancingTargetYears: parseFloat(e.target.value) })}
-                                        style={{ flex: 1 }}
-                                    />
-                                    <span>{localConfig.customRebalancingTargetYears || 2} Years</span>
-                                </div>
-                                <div style={{ marginTop: '0.25rem', fontSize: '0.75rem', opacity: 0.8 }}>
-                                    Maintains this many years of expenses in Bucket 1.
+                                <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                                    Use the Strategy Builder (Gear Icon) to configure this.
                                 </div>
                             </div>
                         )}
-                        {localConfig.rebalancingStrategy === 'Tactical' && (
-                            <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
-                                <div style={{ marginBottom: '1rem', fontSize: '0.8rem', color: '#fb923c' }}>
-                                    <strong>Strategy:</strong> <br />
-                                    1. 🛡️ <strong>Safety:</strong> Ensures                                    <br />
-                                    3. 🟢 <strong>Buy Low:</strong> If Equity trails expectation, buy more from Income.
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                    <label>Safety Buffer (Years):</label>
-                                    <input
-                                        type="number" min="1" max="10"
-                                        value={localConfig.tacticalCashBufferYears || 3}
-                                        onChange={(e) => setLocalConfig({ ...localConfig, tacticalCashBufferYears: parseInt(e.target.value) })}
-                                        style={{ width: '60px', padding: '0.25rem' }}
-                                    />
-                                </div>
-                            </div>
-                        )}
+                        {/* 
+                         Legacy Tactical Config Removed (Properties not in GameConfig) 
+                         TODO: Check if we need to add tacticalCashBufferYears to GameConfig or use overrides.
+                        */}
                         {localConfig.rebalancingStrategy === 'GlidePath' && (
                             <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
                                 <div style={{ fontSize: '0.8rem', color: '#60a5fa' }}>

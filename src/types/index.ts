@@ -64,7 +64,7 @@ export interface GameConfig {
 }
 
 export interface CustomStrategyConfig {
-    baseStrategy: 'RefillBucket1' | 'Tactical' | 'GlidePath' | 'FixedAllocation';
+    baseStrategy: 'RefillBucket1' | 'Tactical' | 'GlidePath' | 'FixedAllocation' | 'AI_Max_Survival';
     params: RebalancingParams;
 }
 
