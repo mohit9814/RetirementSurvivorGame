@@ -23,7 +23,7 @@ const BurnDownChart: React.FC<BurnDownChartProps> = ({ history, survivalYears, c
     return (
         <div className="glass-panel" style={{ padding: '1rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ marginBottom: '0.5rem', textAlign: 'center', fontSize: '1rem' }}>Wealth Trajectory (₹ Cr)</h3>
-            <div style={{ flex: 1, minHeight: 0 }}>
+            <div style={{ flex: 1, minHeight: '300px', height: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                         <XAxis

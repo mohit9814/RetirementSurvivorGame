@@ -78,7 +78,7 @@ const BucketStackChart: React.FC<BucketStackChartProps> = ({ history, survivalYe
             <h3 style={{ marginBottom: '0.5rem', textAlign: 'center', fontSize: '1rem' }}>
                 {mode === 'percent' ? 'Asset Allocation (%)' : 'Bucket Composition (₹ Cr)'}
             </h3>
-            <div style={{ flex: 1, minHeight: '200px' }}>
+            <div style={{ flex: 1, minHeight: '300px', height: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart
                         data={data}

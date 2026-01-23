@@ -167,32 +167,20 @@ function App() {
             <>
               <ChallengeModal />
 
-              <header className="dashboard-header" style={{
-                padding: '0.5rem',
-                position: 'relative',
-                zIndex: 101,
-                display: 'flex',
-                flexWrap: 'wrap', // Allow wrapping on small mobile
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.5rem'
-              }}>
+              <header className="dashboard-header">
                 {/* Left: Title & Strategy */}
-                < div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <h1 style={{
-                    fontSize: '1.1rem', fontWeight: 700, margin: 0, letterSpacing: '-0.03em',
-                    background: 'linear-gradient(to right, #38bdf8, #818cf8)',
-                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                    display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'
-                  }} onClick={() => setShowLeaderboard(true)}>
+                <div className="header-left">
+                  <h1 onClick={() => setShowLeaderboard(true)}>
                     <span>🚀</span> Retirement Survivor
                   </h1>
                   {
                     hasStarted && (
-                      <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
+                      <div className="strategy-wrapper">
                         <StrategyHeader
                           currentStrategy={gameState.config.rebalancingStrategy}
                           customStrategyConfig={gameState.config.customStrategy}
+                          currentYear={gameState.currentYear}
+                          survivalYears={gameState.config.survivalYears}
                           onStrategyChange={(strat, customConfig) => {
                             updateConfig({
                               ...gameState.config,
@@ -208,36 +196,26 @@ function App() {
                 </div >
 
                 {/* Right: Controls & Menu */}
-                < div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginLeft: 'auto' }}>
+                <div className="header-right">
 
                   {hasStarted && !gameState.isGameOver && (
-                    <div className="control-group" style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '2px' }}>
+                    <div className="control-group">
                       {/* Speed */}
-                      <div style={{ display: 'flex', borderRight: '1px solid rgba(255,255,255,0.1)', paddingRight: '4px', marginRight: '4px' }}>
+                      <div className="speed-controls">
                         {[1000, 200].map((s) => (
-                          <button key={s} onClick={() => playback.setSpeed(s)} style={{
-                            padding: '4px', fontSize: '0.7rem', border: 'none', background: 'transparent',
-                            color: speed === s ? '#fbbf24' : '#64748b', fontWeight: 700, cursor: 'pointer'
-                          }}>{s === 1000 ? '1x' : '5x'}</button>
+                          <button key={s} onClick={() => playback.setSpeed(s)} className={speed === s ? 'active' : ''}>
+                            {s === 1000 ? '1x' : '5x'}
+                          </button>
                         ))}
                       </div>
 
                       {/* Step */}
-                      <button className="btn" onClick={handleNextYear} disabled={playback.isPlaying} style={{
-                        padding: '6px 10px', background: 'transparent', border: 'none', color: '#cbd5e1', cursor: playback.isPlaying ? 'not-allowed' : 'pointer', opacity: playback.isPlaying ? 0.3 : 1
-                      }} title="Step 1 Year">
+                      <button className="btn btn-step" onClick={handleNextYear} disabled={playback.isPlaying} title="Step 1 Year">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                       </button>
 
                       {/* PLAY/PAUSE - Prominent */}
-                      <button className="btn" onClick={playback.togglePlay} style={{
-                        padding: '6px 16px', borderRadius: '6px', border: 'none',
-                        background: playback.isPlaying ? '#fbbf24' : '#22c55e',
-                        color: playback.isPlaying ? '#78350f' : 'white',
-                        fontWeight: 700, fontSize: '0.9rem',
-                        display: 'flex', alignItems: 'center', gap: '6px',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
-                      }}>
+                      <button className="btn btn-play" onClick={playback.togglePlay}>
                         {playback.isPlaying ? '⏸' : '▶'}
                       </button>
                     </div>
@@ -246,10 +224,7 @@ function App() {
                   {
                     gameState.isGameOver && isInspecting && (
                       <div style={{ display: 'flex', marginLeft: 'auto' }}>
-                        <button className="btn" onClick={() => setIsInspecting(false)} style={{
-                          background: '#fbbf24', color: '#78350f', padding: '0.5rem 1rem', fontSize: '0.9rem', fontWeight: 700,
-                          boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)'
-                        }}>
+                        <button className="btn btn-show-result" onClick={() => setIsInspecting(false)}>
                           🏆 Show Result
                         </button>
                       </div>
@@ -261,8 +236,7 @@ function App() {
                     hasStarted && (
                       <button
                         onClick={() => setShowConfig(true)}
-                        className="btn"
-                        style={{ background: 'rgba(255,255,255,0.1)', padding: '0.6rem', color: '#94a3b8', borderRadius: '50%' }}
+                        className="btn btn-settings"
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <circle cx="12" cy="12" r="3"></circle>
@@ -332,44 +306,23 @@ function App() {
                     </section>
 
                     {/* Compact Tabs Bar (Controls removed) */}
-                    <section className="dashboard-controls" style={{
-                      gridArea: 'controls', display: 'flex', gap: '0.75rem', alignItems: 'center',
-                      justifyContent: 'center', width: '100%'
-                    }}>
+                    <section className="dashboard-controls">
                       {/* Tabs only now */}
-                      <div className="dashboard-tabs" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', width: '100%', maxWidth: '600px' }}>
+                      <div className="dashboard-tabs">
                         <button
                           className={`btn ${viewMode === 'visuals' ? 'btn-primary' : ''}`}
-                          style={{
-                            flex: 1, padding: '0.75rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: '8px',
-                            background: viewMode === 'visuals' ? undefined : 'rgba(255,255,255,0.05)',
-                            border: '1px solid var(--glass-border)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
-                          }}
                           onClick={() => setViewMode('visuals')}
                         >
                           <span>📊</span> Visuals
                         </button>
                         <button
                           className={`btn ${viewMode === 'data' ? 'btn-primary' : ''}`}
-                          style={{
-                            flex: 1, padding: '0.75rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: '8px',
-                            background: viewMode === 'data' ? undefined : 'rgba(255,255,255,0.05)',
-                            border: '1px solid var(--glass-border)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
-                          }}
                           onClick={() => setViewMode('data')}
                         >
                           <span></span> Mission Log
                         </button>
                         <button
                           className={`btn ${viewMode === 'intel' ? 'btn-primary' : ''}`}
-                          style={{
-                            flex: 1, padding: '0.75rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: '8px',
-                            background: viewMode === 'intel' ? undefined : 'rgba(255,255,255,0.05)',
-                            border: '1px solid var(--glass-border)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
-                          }}
                           onClick={() => setViewMode('intel')}
                         >
                           <span>🧠</span> Intel
@@ -378,7 +331,7 @@ function App() {
                     </section>
 
                     {/* Main Content Area */}
-                    <div style={{ gridArea: 'main', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100%', gap: '0.5rem', position: 'relative' }}>
+                    <div className="dashboard-main">
 
                       {/* Initial Instruction Overlay */}
                       {hasStarted && gameState.currentYear === 0 && !playback.isPlaying && !gameState.isGameOver && (
@@ -468,34 +421,30 @@ function App() {
                       )}
 
                       {/* CONTENT AREA */}
-                      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+                      <div className="dashboard-content-wrapper">
                         {viewMode === 'visuals' && (
-                          <section className="dashboard-chart" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '300px', gap: '0.5rem' }}>
-                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', padding: '0 0.5rem' }}>
+                          <section className="dashboard-chart">
+                            <div className="chart-controls">
                               <button
-                                className="btn"
-                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'wealth' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'wealth' ? 1 : 0.7 }}
+                                className={`btn ${chartMode === 'wealth' ? 'active' : ''}`}
                                 onClick={() => setChartMode('wealth')}
                               >
                                 Wealth
                               </button>
                               <button
-                                className="btn"
-                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'buckets' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'buckets' ? 1 : 0.7 }}
+                                className={`btn ${chartMode === 'buckets' ? 'active' : ''}`}
                                 onClick={() => setChartMode('buckets')}
                               >
                                 Buckets
                               </button>
                               <button
-                                className="btn"
-                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'allocation' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'allocation' ? 1 : 0.7 }}
+                                className={`btn ${chartMode === 'allocation' ? 'active' : ''}`}
                                 onClick={() => setChartMode('allocation')}
                               >
                                 Alloc %
                               </button>
                               <button
-                                className="btn"
-                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: chartMode === 'comparison' ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)', opacity: chartMode === 'comparison' ? 1 : 0.7 }}
+                                className={`btn ${chartMode === 'comparison' ? 'active' : ''}`}
                                 onClick={() => setChartMode('comparison')}
                               >
                                 GOD Mode

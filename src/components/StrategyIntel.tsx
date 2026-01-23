@@ -9,7 +9,7 @@ interface StrategyIntelProps {
 
 const StrategyIntel: React.FC<StrategyIntelProps> = ({ gameState }) => {
     const [activeTab, setActiveTab] = useState('Alpha');
-    const [benchmark, setBenchmark] = useState('FixedAllocation');
+    const [benchmark, setBenchmark] = useState('GlidePath');
 
     const STRATEGY_DATA: Record<string, { title: string, mechanics: string, pros: string[], cons: string[], benchmarks: any }> = {
         'GlidePath': {
@@ -67,6 +67,27 @@ const StrategyIntel: React.FC<StrategyIntelProps> = ({ gameState }) => {
     };
 
     const alphaData = getAlphaData();
+
+    // Calculate SWR Stats
+    const calculateSWR = () => {
+        if (!gameState.history || gameState.history.length === 0) return { maxWR: 0, avgWR: 0 };
+        let maxWR = 0;
+        let totalWR = 0;
+
+        gameState.history.forEach(h => {
+            // WR = Withdrawn / (EndingWealth + Withdrawn + Tax) -> Start of Year Wealth
+            const startWealth = h.totalWealth + h.withdrawn + h.taxPaid;
+            const wr = startWealth > 0 ? (h.withdrawn / startWealth) * 100 : 0;
+            if (wr > maxWR) maxWR = wr;
+            totalWR += wr;
+        });
+
+        return {
+            maxWR,
+            avgWR: totalWR / gameState.history.length
+        };
+    };
+    const swrData = calculateSWR();
 
     return (
         <div className="glass-panel" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -140,21 +161,43 @@ const StrategyIntel: React.FC<StrategyIntelProps> = ({ gameState }) => {
                                     <div className="stat-card" style={{ background: alphaData.alphaAbs >= 0 ? 'rgba(52, 211, 153, 0.1)' : 'rgba(248, 113, 113, 0.1)', padding: '1rem', borderRadius: '8px', border: alphaData.alphaAbs >= 0 ? '1px solid #059669' : '1px solid #b91c1c' }}>
                                         <div style={{ color: alphaData.alphaAbs >= 0 ? '#34d399' : '#f87171', fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: 700 }}>Alpha Generated</div>
                                         <div style={{ fontSize: '1.5rem', fontWeight: 800, color: alphaData.alphaAbs >= 0 ? '#34d399' : '#f87171' }}>
-                                            {alphaData.alphaAbs >= 0 ? '+' : ''}{formatCurrency(alphaData.alphaAbs).split('.')[0]}
+                                            {alphaData.alphaPct >= 0 ? '+' : ''}{alphaData.alphaPct.toFixed(2)}%
                                         </div>
                                     </div>
+
                                 </div>
                             ) : (
                                 <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
                                     Simulation needs to advance to calculate data.
                                 </div>
                             )}
+
+                            {/* SWR Analytics Section */}
+                            <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem' }}>
+                                <h4 style={{ margin: '0 0 1rem', color: '#cbd5e1', fontSize: '1rem' }}>Withdrawal Rate Analytics (Safe Withdrawal Rate)</h4>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase' }}>Max Withdrawal Rate</span>
+                                        <span style={{ fontSize: '1.5rem', fontWeight: 700, color: swrData.maxWR > 4 ? '#ef4444' : swrData.maxWR > 3.5 ? '#f59e0b' : '#22c55e' }}>
+                                            {swrData.maxWR.toFixed(2)}%
+                                        </span>
+                                        <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Peak rate encountered</span>
+                                    </div>
+                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase' }}>Avg Withdrawal Rate</span>
+                                        <span style={{ fontSize: '1.5rem', fontWeight: 700, color: swrData.avgWR > 3.5 ? '#fbbf24' : '#38bdf8' }}>
+                                            {swrData.avgWR.toFixed(2)}%
+                                        </span>
+                                        <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Lifetime average</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {/* 2. Rolling Returns Chart */}
-                        <div style={{ flex: 1, minHeight: '300px', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ height: '350px', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
                             <h3 style={{ margin: '0 0 1rem', color: '#f8fafc', fontSize: '1.25rem' }}>Rolling Portfolio Returns (CAGR)</h3>
-                            <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '1rem' }}>
+                            <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '1rem', minHeight: '0' }}>
                                 <RollingReturnsChart history={gameState.history} />
                             </div>
                         </div>

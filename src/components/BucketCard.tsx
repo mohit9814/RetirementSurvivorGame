@@ -159,9 +159,9 @@ const BucketCard: React.FC<BucketCardProps> = ({
                 )}
             </div>
 
-            {/* Historical Return Mini-Chart (Sparkline) - Hidden on Mobile */}
-            {!isMobile && chartData.length > 2 && (
-                <div style={{ flex: 1, minHeight: '60px', marginTop: '0.5rem', position: 'relative' }}>
+            {/* Historical Return Mini-Chart (Sparkline) - Now Visible on Mobile */}
+            {chartData.length > 2 && (
+                <div style={{ flex: 1, minHeight: isMobile ? '40px' : '60px', marginTop: '0.5rem', position: 'relative' }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData}>
                             <Tooltip
@@ -179,7 +179,7 @@ const BucketCard: React.FC<BucketCardProps> = ({
                             </Bar>
                         </BarChart>
                     </ResponsiveContainer>
-                    <div style={{ position: 'absolute', right: 0, top: 0, fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>
+                    <div style={{ position: 'absolute', right: 0, top: 0, fontSize: isMobile ? '0.55rem' : '0.65rem', color: 'rgba(255,255,255,0.4)' }}>
                         Avg: {avgReturn.toFixed(1)}%
                     </div>
                 </div>

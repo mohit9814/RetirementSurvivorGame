@@ -95,25 +95,25 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({ gameState }) => {
                 </h3>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button
-                        className="btn"
+                        className="btn desktop-only"
                         style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', background: useLogScale ? 'var(--color-primary)' : 'rgba(255,255,255,0.1)' }}
                         onClick={() => setUseLogScale(!useLogScale)}
                     >
                         {useLogScale ? 'Log Scale' : 'Linear Scale'}
                     </button>
                     <button
-                        className="btn"
-                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                        onClick={handleDownload}
+                        className="btn desktop-only"
+                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', background: 'rgba(255,255,255,0.1)' }}
+                        onClick={() => handleDownload()}
                     >
-                        ⬇ CSV
+                        💾 CSV
                     </button>
                 </div>
             </div>
 
-            <div style={{ flex: 1, minHeight: '300px' }}>
+            <div style={{ flex: 1, minHeight: '300px', height: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <LineChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                         <XAxis dataKey="year" stroke="#94a3b8" />
                         <YAxis

@@ -156,6 +156,109 @@ h4 {
   letter-spacing: -0.02em;
 }
 
+/* Header Styles */
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.header-left h1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.03em;
+  background: linear-gradient(to right, #38bdf8, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.strategy-wrapper {
+  transform: scale(0.85);
+  transform-origin: top left;
+}
+
+.header-right {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-left: auto;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.speed-controls {
+  display: flex;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding-right: 4px;
+  margin-right: 4px;
+}
+
+.speed-controls button {
+  padding: 4px;
+  font-size: 0.7rem;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.speed-controls button.active {
+  color: #fbbf24;
+}
+
+.btn-step {
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+}
+
+.btn-step:disabled {
+  opacity: 0.3;
+}
+
+.btn-play {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  background: #22c55e;
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.btn-show-result {
+  background: #fbbf24;
+  color: #78350f;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+.btn-settings {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.6rem;
+  color: #94a3b8;
+  border-radius: 50%;
+}
+
 /* Dashboard Layout */
 .dashboard-container {
   display: grid;
@@ -200,13 +303,99 @@ h4 {
   min-height: 0;
 }
 
+/* Controls (Desktop) - STRICT COMPACTING */
 .dashboard-controls {
   grid-area: controls;
-  height: 100%;
+  height: auto;
+  /* CRITICAL: Do not let this expand to 100% or 1fr */
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: 0.5rem;
+  /* Reduced gap */
+  justify-content: flex-end;
+  /* Push to bottom of its area if there's space */
+}
+
+.dashboard-tabs {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 600px;
+  /* Limit width so they don't stretch forever */
+}
+
+/* Target the buttons inside tabs specifically to crush them */
+.dashboard-tabs button {
+  flex: 1;
+  /* Distribute space evenly */
+  padding: 0.5rem 1rem;
+  /* Restore reasonable padding */
+  font-size: 0.9rem;
+  white-space: nowrap;
+  /* Prevent text wrapping */
+  height: auto;
+  /* Ensure they don't stretch */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+}
+
+.dashboard-tabs button.btn-primary {
+  background: var(--gradient-primary);
+  border: none;
+}
+
+.dashboard-main {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  gap: 0.5rem;
+  position: relative;
+  min-height: 0;
+  /* Important for grid nesting */
+}
+
+.dashboard-content-wrapper {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-controls {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 0 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.chart-controls button {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.2s;
+  opacity: 0.7;
+  border-radius: 4px;
+}
+
+.chart-controls button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+}
+
+.chart-controls button.active {
+  background: var(--color-accent);
+  color: #0f172a;
+  opacity: 1;
+  font-weight: 600;
 }
 
 /* Responsive adjustments - Tablet */
@@ -264,10 +453,11 @@ h4 {
     height: auto !important;
     min-height: 50px !important;
     max-height: none !important;
-    padding: var(--space-xs) 0 !important;
+    padding: 2px 0 !important;
     flex-shrink: 0 !important;
-    flex-wrap: wrap !important;
-    gap: 0.5rem !important;
+    flex-wrap: nowrap !important;
+    /* Force single line */
+    gap: 0.25rem !important;
   }
 
   .dashboard-header h1 {
@@ -364,7 +554,9 @@ h4 {
   /* Show Mission Log again, but maybe smaller */
   .dashboard-controls>div:last-child {
     display: flex !important;
-    height: 250px !important;
+    height: auto !important;
+    /* FIXED: Was 250px, causing giant buttons */
+    min-height: 0 !important;
   }
 
   /* Control Panel - take minimal space */
@@ -447,36 +639,198 @@ h4 {
     transform: translateY(-20px) scale(1.1);
   }
 
-  80% {
-    opacity: 1;
-    transform: translateY(-40px) scale(1);
-  }
-
   100% {
     opacity: 0;
     transform: translateY(-60px) scale(0.9);
   }
-}/ *   M o b i l e   L a y o u t   T w e a k s   f o r   C o n t r o l s   &   T a b s   * /  
- @ m e d i a   ( m a x - w i d t h :   7 6 8 p x )   {  
-         . d a s h b o a r d - c o n t r o l s   {  
-                 f l e x - d i r e c t i o n :   c o l u m n   ! i m p o r t a n t ;  
-                 a l i g n - i t e m s :   s t r e t c h   ! i m p o r t a n t ;  
-                 h e i g h t :   a u t o   ! i m p o r t a n t ;  
-                 g a p :   0 . 5 r e m   ! i m p o r t a n t ;  
-         }  
-  
-         / *   O v e r r i d e   t h e   i n l i n e   s t y l e s   * /  
-         . d a s h b o a r d - c o n t r o l s > d i v : f i r s t - c h i l d   {  
-                 f l e x :   n o n e   ! i m p o r t a n t ;  
-                 w i d t h :   1 0 0 %   ! i m p o r t a n t ;  
-         }  
-  
-         . d a s h b o a r d - t a b s   {  
-                 f l e x :   n o n e   ! i m p o r t a n t ;  
-                 w i d t h :   1 0 0 %   ! i m p o r t a n t ;  
-                 p a d d i n g - l e f t :   0   ! i m p o r t a n t ;  
-                 / *   R e m o v e   l e f t   p a d d i n g   o n   m o b i l e   * /  
-                 j u s t i f y - c o n t e n t :   s p a c e - b e t w e e n   ! i m p o r t a n t ;  
-         }  
- }  
- 
+}
+
+/* Mobile Layout Tweaks - STRICT ENFORCEMENT */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 0.25rem 0.25rem 0 !important;
+    gap: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    justify-content: flex-start !important;
+  }
+
+  .dashboard-container>* {
+    margin-bottom: 0.25rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Header Wrapping */
+  .dashboard-header {
+    flex-wrap: wrap !important;
+    height: auto !important;
+    padding-right: 0.5rem !important;
+    justify-content: space-between !important;
+  }
+
+  .header-left {
+    flex: 1 1 auto;
+    min-width: 150px;
+  }
+
+  .header-right {
+    margin-left: 0 !important;
+    flex: 0 0 auto;
+    margin-top: 2px;
+  }
+
+  /* Buckets */
+  .dashboard-buckets {
+    gap: 0.25rem !important;
+    margin-bottom: 0 !important;
+    flex: none !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    padding-bottom: 0.5rem !important;
+    justify-content: flex-start !important;
+  }
+
+  .dashboard-buckets>div,
+  .dashboard-buckets>.glass-panel {
+    min-width: 35% !important;
+    flex: 0 0 35% !important;
+  }
+
+  /* Controls (Tabs) */
+  .dashboard-controls {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    /* Allow wrapping if needed */
+    align-items: center !important;
+    height: auto !important;
+    min-height: 0 !important;
+    gap: 0.25rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    justify-content: space-between !important;
+  }
+
+  /* Ensure tabs take full width on new row if wrapped */
+  .dashboard-tabs {
+    flex: 1 1 100% !important;
+    /* Take full width */
+    width: 100% !important;
+    padding-left: 0 !important;
+    justify-content: space-between !important;
+    margin-bottom: 0.25rem !important;
+    gap: 0.25rem !important;
+  }
+
+  /* FORCE Compact Buttons on Mobile */
+  .dashboard-tabs button {
+    flex: 1 !important;
+    padding: 0.3rem 0.5rem !important;
+    /* Tiny padding */
+    font-size: 0.75rem !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  /* Main / Chart Area */
+  .dashboard-container>.dashboard-main {
+    margin-bottom: 0 !important;
+    flex: 1 !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .dashboard-content-wrapper {
+    flex: 1 !important;
+    height: auto !important;
+    min-height: 400px !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .dashboard-chart {
+    flex: 0 0 400px !important;
+    /* Fixed height for chart to ensure rendering */
+    height: 400px !important;
+    min-height: 400px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: visible !important;
+  }
+
+  /* FORCE Compact Buttons on Mobile - NUCLEAR OPTION */
+  .dashboard-tabs button {
+    flex: 1 1 0px !important;
+    min-width: 0 !important;
+    padding: 6px 2px !important;
+    font-size: 11px !important;
+    height: auto !important;
+    min-height: 36px !important;
+    white-space: normal !important;
+    line-height: 1.1 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Ensure ONLY the Chart Panel fills the container */
+  .dashboard-chart>.glass-panel {
+    flex: 1 1 auto !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Force controls to be horizontal and compact - HIGH SPECIFICITY */
+  .dashboard-chart .chart-controls {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    /* Keep auto in case of very small screens */
+    gap: 2px !important;
+    padding: 0 !important;
+    margin-bottom: 4px !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    justify-content: space-between !important;
+    /* Distribute */
+  }
+
+  .dashboard-chart .chart-controls button {
+    flex: 1 1 auto !important;
+    /* Grow and shrink */
+    min-width: 0 !important;
+    /* Allow shrinking below content size */
+    padding: 6px 2px !important;
+    /* Increased touch target slightly */
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    text-align: center !important;
+    border-radius: 4px !important;
+    line-height: normal !important;
+  }
+
+  .chart-controls button {
+    flex: 1 1 auto !important;
+    /* Grow and shrink */
+    min-width: 0 !important;
+    /* Allow shrinking below content size */
+    padding: 4px 2px !important;
+    font-size: 0.7rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    text-align: center !important;
+    border-radius: 4px !important;
+  }
+}

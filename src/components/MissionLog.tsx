@@ -56,16 +56,26 @@ const MissionLog: React.FC<MissionLogProps> = ({ history }) => {
                             <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--glass-border)' }}>Details</th>
                             <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--glass-border)', textAlign: 'right' }}>Tax</th>
                             <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--glass-border)', textAlign: 'right' }}>Drawdown</th>
+                            <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--glass-border)', textAlign: 'right' }}>WR %</th>
                             <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--glass-border)', textAlign: 'right' }}>Wealth</th>
                             <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--glass-border)' }}>Rebalancing Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {history.length === 1 &&
-                            <tr><td colSpan={6} style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--color-text-secondary)' }}>Simulation Initialized.</td></tr>
+                            <tr><td colSpan={7} style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--color-text-secondary)' }}>Simulation Initialized.</td></tr>
                         }
                         {[...history].reverse().map((h) => {
-                            // Parse Rebalancing Log
+                            // Calculate Withdrawal Rate (Based on Portfolio at Start of Distribution)
+                            // Approx: Withdrawn / (EndingWealth + Withdrawn + Tax)
+                            const derivedStartWealth = h.totalWealth + h.withdrawn + h.taxPaid;
+                            const wr = derivedStartWealth > 0 ? (h.withdrawn / derivedStartWealth) * 100 : 0;
+
+                            let wrColor = '#94a3b8'; // Default grey
+                            if (wr < 2) wrColor = '#4ade80'; // Green
+                            else if (wr > 3.5) wrColor = '#ef4444'; // Red
+                            else if (wr > 3) wrColor = '#fbbf24'; // Amber
+
                             // Parse Rebalancing Log
                             let rebalancingNodes: React.ReactNode = null;
                             const hasMoves = h.rebalancingMoves && Array.isArray(h.rebalancingMoves) && h.rebalancingMoves.length > 0;
@@ -147,6 +157,10 @@ const MissionLog: React.FC<MissionLogProps> = ({ history }) => {
                                                 CUT ℹ️
                                             </span>
                                         )}
+                                    </td>
+
+                                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right', verticalAlign: 'top', color: wrColor }}>
+                                        {wr.toFixed(1)}%
                                     </td>
 
                                     <td style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right', verticalAlign: 'top' }}>
